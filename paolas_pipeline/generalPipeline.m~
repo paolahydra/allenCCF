@@ -1,10 +1,18 @@
 addpath(genpath('/Users/galileo/GitHub/allenCCF'))
 
-%% PP's preprocessing
-% 1. batch convert all the axioscans in series 2 tiff in axioscan. ADD NAME
-% -- perhaps avoid saturating right tail
-% 2. split in single figures using my matlab code: ADD
-axiosc
+%% PP's preprocessing of axioscan images
+% 1. batch convert all the axioscans ito tiff in ImageJ, using the macro: 
+% batch_convert2tiff_highestResSeries_general.ijm.  Depending on how
+% your images were acquired, you may want to choose the highest resolution
+% series, or the second-highest one. For cell detection, I have had good 
+% results for cell detection starting from an image with 3.9 um per pixel.
+% -- avoid saturating the right tail of the histogram.
+
+
+% 2. split in single figures using my matlab code: MODIFY!
+image_folder = 'D:\axioscan_processing\992234';
+image_tag = 'mouse_992234_';
+axioscanTiff_slideCropper(); % TO DO: fix input and output folder definition. Check frame size for cropping (make it standard)
 
 
 
