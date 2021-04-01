@@ -10,8 +10,10 @@ addpath(genpath('/Users/galileo/GitHub/allenCCF'))
 
 
 % 2. split in single figures using my matlab code: MODIFY!
-image_folder = 'D:\axioscan_processing\992234';
-image_tag = 'mouse_992234_';
+% image_folder = 'D:\axioscan_processing\992234';
+% image_tag = 'mouse_992234_';
+image_folder = 'W:\scratch\garber\BrainRegistration';
+image_tag = '20210315_Lbx1cre_R_';
 axioscanTiff_slideCropper(image_file_names(f)); % TO DO: fix input and output folder definition. Check frame size for cropping (make it standard)
 
 
