@@ -15,8 +15,24 @@ ud.grid = 0;
 ud = load_next_slice(ud,folder_preprocessed_images);
 
 ud.grid = zeros(size(ud.current_slice_image),class(ud.original_slice_image)); 
-ud.grid(1:50:end,:,:) = 150 + 20000*(isa(ud.original_slice_image,'uint16')); 
-ud.grid(:,1:50:end,:) = 150 + 20000*(isa(ud.original_slice_image,'uint16'));    
+gridsize = round(size(ud.current_slice_image,1)/20);
+ud.grid(1:gridsize:end,:,:) = 150 + 20000*(isa(ud.original_slice_image,'uint16')); 
+ud.grid(:,1:gridsize:end,:) = 150 + 20000*(isa(ud.original_slice_image,'uint16')); 
+if size(ud.current_slice_image,1)>3000 
+    for xi = 1:5
+        x1 = (1:gridsize:size(ud.current_slice_image,1)-xi)+xi;
+        y1 = (1:gridsize:size(ud.current_slice_image,2)-xi)+xi;
+        ud.grid(x1,:,:) = 150 + 20000*(isa(ud.original_slice_image,'uint16'));
+        ud.grid(:,y1,:) = 150 + 20000*(isa(ud.original_slice_image,'uint16'));
+    end
+elseif size(ud.current_slice_image,1)>1500 
+    for xi = 1:3
+        x1 = (1:gridsize:size(ud.current_slice_image,1)-xi)+xi;
+        y1 = (1:gridsize:size(ud.current_slice_image,2)-xi)+xi;
+        ud.grid(x1,:,:) = 150 + 20000*(isa(ud.original_slice_image,'uint16'));
+        ud.grid(:,y1,:) = 150 + 20000*(isa(ud.original_slice_image,'uint16'));
+    end
+end
 
 imshow(ud.current_slice_image*ud.gain + ud.grid)
 title(['Slice ' num2str(ud.slice_num) ' / ' num2str(ud.total_num_files)])

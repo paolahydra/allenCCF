@@ -1,4 +1,4 @@
-function HistologyCropper_PP(histology_figure, image_folder, save_folder, image_file_names, reference_size, save_file_name, ordinal, wait2confirmROI)
+function HistologyCropper_PP(histology_figure, image_folder, save_folder, image_file_names, reference_size, save_file_name, ordinal)
 global reference_size
 % set up histology figure
 ud_histology.file_num = 1;
@@ -10,6 +10,8 @@ ud_histology.ordinal = ordinal;
 
 INFO = imfinfo(fullfile(image_folder, image_file_names{ud_histology.file_num}));
 nChannels = length(INFO);
+ud_histology.hist_image = [];   %this is the original image. Quality will be preserved.
+img = [];                       %this is just for visualization
 for ch = 1:min([3, nChannels])  % only use the first three channels (as the last one is often empty/noisy)
     ud_histology.hist_image(:,:,ch) = imread(fullfile(image_folder, image_file_names{ud_histology.file_num}), 'tif', ch); %this is the original image. Quality will be preserved.
     img(:,:,ch) = ud_histology.hist_image(:,:,ch);
@@ -37,15 +39,19 @@ set(histology_figure, 'UserData', ud_histology);
 % crop and switch image function for histology
 set(histology_figure, 'KeyPressFcn', @(histology_figure,keydata)HistologyCropHotkeyFcn(histology_figure, keydata));
 
-disp('click to select ROIs')
-ud_histology = crop_and_save_image(ud_histology, histology_figure, save_folder, reference_size, wait2confirmROI);
+fprintf(1, '\n Controls: \n \n');
+fprintf(1, 'click and drag: crop image \n');
+fprintf(1, 'space: next image \n \n');
+
+disp('select ROIs')
+ud_histology = crop_and_save_image(ud_histology, histology_figure, save_folder, reference_size);
 
 end
 
 % --------------------------------------------------------------------------
 % use imrect to crop, and then save the cropped image in 'processed' folder
 % --------------------------------------------------------------------------
-function ud_histology = crop_and_save_image(ud_histology, histology_figure, save_folder, reference_size, wait2confirmROI)
+function ud_histology = crop_and_save_image(ud_histology, histology_figure, save_folder, reference_size)
 global reference_size
 try % get first slice ROI
     ud_histology = get(histology_figure, 'UserData');
@@ -56,11 +62,7 @@ try % get first slice ROI
     pos = ud_histology.h(N_slicesInThisImage).Position;
     hroi = drawrectangle( 'Position', [pos(1) - floor(reference_size(2)/2) , pos(2) - floor(reference_size(1)/2), reference_size(2),  reference_size(1)], ...
         'DrawingArea', 'unlimited', 'InteractionsAllowed', 'translate', 'FaceSelectable', 1);
-    if wait2confirmROI
-        pos = customWait(hroi);
-    else
-        pos = hroi.Position;
-    end
+    pos = customWait(hroi);
     
     %% pad and crop - new 2021
     im =  ud_histology.hist_image;
@@ -82,7 +84,7 @@ try % get first slice ROI
     ud_histology.slice_image = im(pos(2):pos(2)+pos(4), pos(1):pos(1)+pos(3), :);
     
     
-    imwrite(ud_histology.slice_image, fullfile(save_folder, ...
+    imwrite(ud_histology.slice_image, fullfile(save_folder, 'processed', ...
         [ud_histology.save_file_name num2str(ud_histology.ordinal,'%.2d') '.' num2str(ud_histology.slice_num(ud_histology.file_num),'%.3d') '.tif']))
     disp([ud_histology.save_file_name num2str(ud_histology.ordinal,'%.2d') '.' num2str(ud_histology.slice_num(ud_histology.file_num),'%.3d') ' saved!'])
     
@@ -96,7 +98,7 @@ end
 set(histology_figure, 'UserData', ud_histology);
 
 try
-    ud_histology = crop_and_save_image(ud_histology, histology_figure, save_folder, reference_size, wait2confirmROI);
+    ud_histology = crop_and_save_image(ud_histology, histology_figure, save_folder, reference_size);
 catch; disp('')
     end
 end
