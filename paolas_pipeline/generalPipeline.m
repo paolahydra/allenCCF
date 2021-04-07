@@ -35,7 +35,7 @@ plane = 'coronal';
 
 
 % 2. split in single figures:
-image_folder = 'D:\axioscan_processing\BrainRegistration'; %'W:\scratch\garber\BrainRegistration';
+image_folder = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration'; 
 image_tag = '20210315_Lbx1cre_R_';
 microns_per_pixel = 2.60;
 wait2confirmROI = 0;    % if true, you will need to double-click to confirm each ROI. If false, a cropped image is automatically saved.
@@ -43,6 +43,8 @@ wait2confirmROI = 0;    % if true, you will need to double-click to confirm each
                         
 cd(image_folder)
 save_folder = fullfile(image_folder, 'startingSingleSlices');
+
+%% step to crop in single images (skip for now)
 axioscanTiff_slideCropper(image_folder, image_tag, save_folder, microns_per_pixel, wait2confirmROI);
 
 
@@ -87,7 +89,7 @@ image_file_names = natsortfiles({image_file_names.name});
 % image_file_names = {'slide no 2_RGB.tif','slide no 3_RGB.tif','slide no 4_RGB.tif'}; % alternatively, list each image in order
 
 
-%%
+%% refine the cropping in the preprocessed folder
 Process_Histology_1_PP; %this will interactively allow you to crop, flip, rotate (and permute - untested) slices
 % this can be quite fast if you don't dwell too much on rotations. Count 30
 % sec per slice, or less
