@@ -12,12 +12,13 @@ if ~exist('folder_processed_images','var')
 end
 
 % name the saved probe points, to avoid overwriting another set of probes going in the same folder
-probe_save_name_suffix = 'test_probePoints'; 
+probe_save_name_suffix = ''; 
 
 % directory of reference atlas files
-annotation_volume_location = '/Users/galileo/Dropbox (Personal)/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files/annotation_volume_10um_by_index.npy';
-structure_tree_location = '/Users/galileo/Dropbox (Personal)/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files/structure_tree_safe_2017.csv';
-template_volume_location = '/Users/galileo/Dropbox (Personal)/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files/template_volume_10um.npy';
+pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_index.npy');
+structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
+template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
 
 % plane to view ('coronal', 'sagittal', 'transverse')
 plane = 'coronal';
@@ -57,9 +58,9 @@ sliceBrowser(slice_figure_browser, folder_processed_images, f, reference_size);
 
 % use application in Atlas Transform Viewer
 % use this function if you have a processed_images_folder with appropriately processed .tif histology images
-f = AtlasTransformBrowser(f, tv_plot, av_plot, st, slice_figure_browser, folder_processed_images, probe_save_name_suffix); 
+f = AtlasTransformBrowser(f, tv_plot, av_plot, st, slice_figure_browser, folder_processed_images, probe_save_name_suffix, plane); 
 
-
+T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
 % use the simpler version, which does not interface with processed slice images
 % just run these two lines instead of the previous 5 lines of code
 % 
