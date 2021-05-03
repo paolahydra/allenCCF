@@ -96,6 +96,7 @@ elseif strcmp(keydata.Key,'e')
     disp('current transform points deleted')
     set(ud.pointHands(:), 'Visible', 'off'); 
     ud.pointList = [];    
+    
 % t -- transform point mode
 elseif strcmp(keydata.Key,'t')
     ud.getPoint = ~ud.getPoint;

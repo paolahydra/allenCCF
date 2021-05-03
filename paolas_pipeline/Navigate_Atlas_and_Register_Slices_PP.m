@@ -8,7 +8,7 @@
 
 % directory of histology
 if ~exist('folder_processed_images','var')
-    folder_processed_images = '/Users/galileo/dati/Mar2021/reTestCortexLabAlignmentToAllenAtlas/mouse993031/processed'; %define the path here if standalone running
+    folder_processed_images = fullfile(save_folder, 'processed'); %define the path here if standalone running
 end
 
 % name the saved probe points, to avoid overwriting another set of probes going in the same folder
@@ -58,12 +58,7 @@ sliceBrowser(slice_figure_browser, folder_processed_images, f, reference_size);
 
 % use application in Atlas Transform Viewer
 % use this function if you have a processed_images_folder with appropriately processed .tif histology images
-f = AtlasTransformBrowser(f, tv_plot, av_plot, st, slice_figure_browser, folder_processed_images, probe_save_name_suffix, plane); 
+f = AtlasTransformBrowser(f, tv_plot, av_plot, st, slice_figure_browser, folder_processed_images, probe_save_name_suffix, plane, 'pwl'); 
 
-T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
-% use the simpler version, which does not interface with processed slice images
-% just run these two lines instead of the previous 5 lines of code
-% 
-% save_location = processed_images_folder;
-% f = allenAtlasBrowser(tv_plot, av_plot, st, save_location, probe_save_name_suffix);
+% T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
 

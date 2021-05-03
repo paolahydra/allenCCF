@@ -291,13 +291,14 @@ end
 %% draft plot points on fwireframe
 
 
-ProbeColors = .75*[1.3 1.3 1.3; 1 .75 0;  .3 1 1; .4 .6 .2; 1 .35 .65; .7 .7 .9; .65 .4 .25; .7 .95 .3; .7 0 0; .6 0 .7; 1 .6 0]; 
+% ProbeColors = .75*[1.3 1.3 1.3; 1 .75 0;  .3 1 1; .4 .6 .2; 1 .35 .65; .7 .7 .9; .65 .4 .25; .7 .95 .3; .7 0 0; .6 0 .7; 1 .6 0]; 
+ProbeColors = .75*[1.3 1.3 1.3]; 
 
 
 % show a table of regions that the probe goes through, in the console
 show_region_table = true;      
 % black brain?
-black_brain = true;
+black_brain = false;
 fwireframe = [];
 % create a new figure with wireframe
 fwireframe = plotBrainGrid([], [], fwireframe, black_brain);

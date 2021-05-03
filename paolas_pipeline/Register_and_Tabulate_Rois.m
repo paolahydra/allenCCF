@@ -1,28 +1,34 @@
-%% reapply the same transormations to ROIs to register detected cells
+function T_roi = Register_and_Tabulate_Rois(object_tag, image_folder, save_file_name, av, st, tv_plot, microns_per_pixel, microns_per_pixel_after_downsampling, reference_size )
+% reapply the same transormations to ROIs to register detected cells
+% it assumes it gets path definitions from the generalPipeline script
+%
+% %change this one as needed:
+% object_tag = 'green';
+% trasformanda_tag = '.tif (green)_dilate.png';
 
-%change this one as needed:
-object_tag = 'green';
-trasformanda_tag = '.tif (green)_dilate.png';
+%% paths
+trasformanda_tag = sprintf('.tif (%s)_dilate.png', object_tag);
 
-%%
+trasformanda_folder = fullfile(image_folder, 'preprocessed');
+folder_processed_images = fullfile(image_folder, 'processed');
+transf_atlasreg_folder = fullfile(image_folder, 'processed/transformations');
+d = dir(fullfile(transf_atlasreg_folder, '*processed_transform_data.mat'));
+
 roiTable_name = fullfile(folder_processed_images, sprintf('%s%s_roiTable_All.csv',save_file_name, object_tag));
 if exist(roiTable_name, 'file')
     warning('roi_table file already exists and it will be overwritten')
 end
 
-transf_atlasreg_folder = fullfile(image_folder, 'processed/transformations');
-trasformanda_folder = fullfile(image_folder, 'preprocessed');
-d = dir(fullfile(transf_atlasreg_folder, '*processed_transform_data.mat'));
 
-% load the reference brain annotations
-if ~exist('av','var')
-    disp('loading reference atlas...')
-    av = readNPY(annotation_volume_location);
-end
-if ~exist('st','var')
-    disp('loading structure tree...')
-    st = loadStructureTree(structure_tree_location);
-end
+% % load the reference brain annotations
+% if ~exist('av','var')
+%     disp('loading reference atlas...')
+%     av = readNPY(annotation_volume_location);
+% end
+% if ~exist('st','var')
+%     disp('loading structure tree...')
+%     st = loadStructureTree(structure_tree_location);
+% end
 
 %%
 for t = 1:length(d)
@@ -45,22 +51,23 @@ for t = 1:length(d)
     % load the image or data to be transformed
     trasformanda_PNG = fullfile(trasformanda_folder, sprintf('%s%s', fileroot, trasformanda_tag)); % to be transformed by applying transformations
     im = imread(trasformanda_PNG);
-    im2 = imread(fullfile(trasformanda_folder, sprintf('%s.tif (%s).png', fileroot, object_tag)));
+%     im2 = imread(fullfile(trasformanda_folder, sprintf('%s.tif (%s).png', fileroot, object_tag))); % just for checking overlay
     original_image_size = size(im);
     im = imresize(im, [round(original_image_size(1)*microns_per_pixel/microns_per_pixel_after_downsampling)  NaN]);
-    im2 = imresize(im2, [round(original_image_size(1)*microns_per_pixel/microns_per_pixel_after_downsampling)  NaN]);
+%     im2 = imresize(im2, [round(original_image_size(1)*microns_per_pixel/microns_per_pixel_after_downsampling)  NaN]);
     
     % create transformed histology image
     ud.ref = uint8(squeeze(tv_plot(slice_num,:,:)));
     R = imref2d(size(ud.ref));
     ud.curr_slice_trans = imwarp(im, transform_data.transform, 'OutputView',R);
-    transformed_slice_image = imwarp(im2, transform_data.transform, 'OutputView',R);
+%     transformed_slice_image = imwarp(im2, transform_data.transform, 'OutputView',R);
     
     rois = uint8(imregionalmax(ud.curr_slice_trans));
     
     % do something with it...
 %     figure; imshow(imfuse(rois, transformed_slice_image));
 %     title('transformed slice image, fused with ROIs')
+    % save images?
     
     % make sure the rois are in a properly size image
     assert(size(rois,1)==800&size(rois,2)==1140&size(rois,3)==1,'roi image is not the right size');
@@ -81,8 +88,7 @@ for t = 1:length(d)
     
     
     % loop through every pixel to get ROI locations and region annotations
-    for pixel = 1:length(pixels_row)
-        
+    for pixel = 1:length(pixels_row) 
         % get the offset from the AP value at the centre of the slice, due to
         % off-from-coronal angling
         offset = offset_map(pixels_row(pixel),pixels_column(pixel));
@@ -92,7 +98,7 @@ for t = 1:length(d)
         dv = (pixels_row(pixel)-bregma(2))*atlas_resolution;
         ml = (pixels_column(pixel)-bregma(3))*atlas_resolution;
         
-        roi_location(pixel,:) = [ap dv ml];                                             % this is the one!!
+        roi_location(pixel,:) = [ap dv ml];   
         
         % finally, find the annotation, name, and acronym of the current ROI pixel
         ann = av(slice_num+offset,pixels_row(pixel),pixels_column(pixel));
@@ -102,7 +108,6 @@ for t = 1:length(d)
         roi_annotation{pixel,1} = ann;
         roi_annotation{pixel,2} = name;
         roi_annotation{pixel,3} = acr;
-        
     end
     
     filename_origin = repmat({sprintf('%s%s', fileroot, trasformanda_tag)}, length(pixels_row),1);
@@ -110,19 +115,17 @@ for t = 1:length(d)
         roi_location(:,1),roi_location(:,2),roi_location(:,3), cat(1, roi_annotation{:,1}), filename_origin, ...
         'VariableNames', {'name', 'acronym', 'AP_location', 'DV_location', 'ML_location', 'avIndex', 'roiFIle'});
     
-%     disp(roi_table)
-    
     if t == 1
-%         writetable(roi_table, roiTable_name, 'WriteVariableNames', true, 'WriteMode', 'overwrite') %only available matlab 2021
+        %         writetable(roi_table, roiTable_name, 'WriteVariableNames', true, 'WriteMode', 'overwrite') %only available matlab 2021
         writetable(roi_table, roiTable_name, 'WriteVariableNames', true)
     else
         T_roi = readtable(roiTable_name);
         T_roi = cat(1, T_roi, roi_table);
-        writetable(T_roi, roiTable_name, 'WriteVariableNames', true) 
-%         writetable(roi_table, roiTable_name, 'WriteVariableNames', false, 'WriteMode', 'append') %only available matlab 2021
+        writetable(T_roi, roiTable_name, 'WriteVariableNames', true)
+        %         writetable(roi_table, roiTable_name, 'WriteVariableNames', false, 'WriteMode', 'append') %only available matlab 2021
     end
-    % eg plot it with atlas boundaries?? 
-    % add
-    % save it
-   
+    
+end
+
+
 end

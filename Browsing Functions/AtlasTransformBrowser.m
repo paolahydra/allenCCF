@@ -1,4 +1,4 @@
-function f = allenAtlasBrowser(f, templateVolume, annotationVolume, structureTree, slice_figure, save_location, save_suffix, plane)
+function f = allenAtlasBrowser(f, templateVolume, annotationVolume, structureTree, slice_figure, save_location, save_suffix, plane, transformationType)
 % ------------------------------------------------
 % Browser for the allen atlas ccf data in matlab.
 % ------------------------------------------------
@@ -26,7 +26,7 @@ ud.currentSlice = ud.bregma(1);
 ud.currentAngle = zeros(2,1);
 ud.scrollMode = 0;
 
-ud.transform_type = 'pwl'; %can change to 'affine' or 'pwl'
+ud.transform_type = transformationType; %'projective'; %can change to 'affine' or 'pwl'
 
 ud.oldContour = [];
 ud.showContour = false;
@@ -337,7 +337,9 @@ switch key_letter
             ud.currentProbe = 0;
 
             % launch transform point mode
-            if ~size(ud.current_pointList_for_transform,1)% ) (ud.curr_slice_num ~= (ud.slice_at_shift_start+ud.slice_shift) ||  && ~ud.loaded 
+%             if ~size(ud.current_pointList_for_transform,1)% ) %% PP
+%             changed from this on May 1, 2021
+            if ud.curr_slice_num ~= (ud.slice_at_shift_start+ud.slice_shift) || ~ud.loaded 
                 ud.curr_slice_num = ud.slice_at_shift_start+ud.slice_shift; %ud_slice.slice_num;
                 ud.current_pointList_for_transform = zeros(0,2);
                 set(ud.pointHands_for_transform(:), 'Visible', 'off'); 
@@ -529,7 +531,7 @@ switch key_letter
         folder_transformations = fullfile(save_location, ['transformations' filesep]);
         ud.clicked = false;
         try
-        if ud.loaded_slice+ud.slice_shift ~= ud_slice.slice_num
+        if ud.loaded_slice+ud.slice_shift ~= ud_slice.slice_num || isempty(ud.current_pointList_for_transform)
             
             ud.curr_slice_num = ud_slice.slice_num;
             
@@ -643,7 +645,7 @@ switch key_letter
         if ud.getPoint_for_transform
             ud.current_pointList_for_transform = zeros(0,2); set(ud.pointHands_for_transform(:), 'Visible', 'off'); 
             ud.pointHands_for_transform = []; ud_slice.pointList = []; set(slice_figure, 'UserData', ud_slice);
-            disp('current transform erased');        
+            disp('current transform erased in both figures');        
         end
 end
 % x -- save transform and current slice position and angle

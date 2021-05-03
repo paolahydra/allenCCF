@@ -89,19 +89,13 @@ disp('Downsampled and boosted images were saved in the processed folder')
 % It also increases the gain for better visualization during registration.
 
 %%
-Navigate_Atlas_and_Register_Slices_PP
+
+Navigate_Atlas_and_Register_Slices_PP.m; 
 % Manually align every slice starting from several interspersed slices to get a gist of the correct angles.
-% After you have registered at least two slices, help yourself by calling
-% the table T belo: in the workspace.
-% Call it again to update it after saving more transformations, before
-% looking at it in the workspace.
-%%
-T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
+% After you have reghelp yourself with the table T below: call it in the workspace )
+% Save the transformations.
 
-% fig_table = tabulateImageInfo(image_file_names, save_folder, T) %check
-% original size of images %not a general purpose function
-
-%% Done. Extras below.
+% Done. Extras below.
 %% red (TH)
 
 % load the reference brain annotations

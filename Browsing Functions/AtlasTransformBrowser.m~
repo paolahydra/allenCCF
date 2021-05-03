@@ -1,4 +1,4 @@
-function f = allenAtlasBrowser(f, templateVolume, annotationVolume, structureTree, slice_figure, save_location, save_suffix, plane)
+function f = allenAtlasBrowser(f, templateVolume, annotationVolume, structureTree, slice_figure, save_location, save_suffix, plane, transformationType)
 % ------------------------------------------------
 % Browser for the allen atlas ccf data in matlab.
 % ------------------------------------------------
@@ -26,7 +26,7 @@ ud.currentSlice = ud.bregma(1);
 ud.currentAngle = zeros(2,1);
 ud.scrollMode = 0;
 
-ud.transform_type = 'pwl'; %can change to 'affine' or 'pwl'
+ud.transform_type = transformationType; %'projective'; %can change to 'affine' or 'pwl'
 
 ud.oldContour = [];
 ud.showContour = false;
@@ -49,7 +49,12 @@ ud.slice_shift = 0;
 ud.loaded_slice = 0;
 ud.slice_at_shift_start = 1;
 ud.text = [];
-ud.T = [];
+if isfile(fullfile(save_location, 'transformations', 'dataTable_transformations.csv') )
+    ud.T = readtable(fullfile(save_location, 'transformations', 'dataTable_transformations.csv'));
+else
+    ud.T = [];
+end
+
 
 reference_image = squeeze(templateVolume(ud.currentSlice,:,:));
 ud.im = plotTVslice(reference_image);
@@ -332,7 +337,9 @@ switch key_letter
             ud.currentProbe = 0;
 
             % launch transform point mode
-            if ~size(ud.current_pointList_for_transform,1)% ) (ud.curr_slice_num ~= (ud.slice_at_shift_start+ud.slice_shift) ||  && ~ud.loaded 
+%             if ~size(ud.current_pointList_for_transform,1)% ) %% PP
+%             changed from this on May 1, 2021
+            if ud.curr_slice_num ~= (ud.slice_at_shift_start+ud.slice_shift) || ~ud.loaded 
                 ud.curr_slice_num = ud.slice_at_shift_start+ud.slice_shift; %ud_slice.slice_num;
                 ud.current_pointList_for_transform = zeros(0,2);
                 set(ud.pointHands_for_transform(:), 'Visible', 'off'); 
@@ -677,7 +684,7 @@ if strcmp(key_letter,'x')
         save_transform.allen_location = allen_location;
         % save all this
         save(fullfile(folder_transformations, [slice_name '_transform_data.mat']), 'save_transform');
-        ud.T = saveTransformTable(folder_transformations, ud.ref_size);
+        ud.T = saveTransformTable(folder_transformations, ud_slice.processed_image_names, [0 ud.ref_size]);
         disp('atlas location saved')
         
         % save transformed histology image
@@ -793,7 +800,7 @@ elseif ud.scrollMode == 3
         set(ud.text,'Visible','off');
         fill([5 5 250 250],[5 50 50 5],[0 0 0]); ud.text(end+1) = text(5,15,['Slice ' num2str(ud.slice_at_shift_start+ud.slice_shift) ' - no transform'],'color','white');        
         if ~isempty(ud.T)
-            
+            disp(ud.T(ud.slice_at_shift_start+ud.slice_shift,{'sliceNum', 'suggestedAllenSlice', 'DV_deg', 'ML_deg'}))
         end
     end  
         

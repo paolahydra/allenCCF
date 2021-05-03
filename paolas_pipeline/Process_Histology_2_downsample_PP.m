@@ -10,6 +10,11 @@ if ~exist(folder_processed_images)
     mkdir(folder_processed_images)
 end
 
+if ~exist('folder_preprocessed_images', 'var')
+    folder_preprocessed_images = fullfile(save_folder, 'preprocessed');
+end
+
+
 % close all figures
 close all
 
