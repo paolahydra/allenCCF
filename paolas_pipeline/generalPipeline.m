@@ -100,8 +100,14 @@ T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), ima
 
 % fig_table = tabulateImageInfo(image_file_names, save_folder, T) %check
 % original size of images %not a general purpose function
+%% load a reference table to check previous registration parameters
+sf = '/Users/galileo/dati/registered_brains_completed/993031/preprocessed';
+image_file_names_31 = dir(fullfile(sf, '*.tif')); % get the contents of the image_folder
+image_file_names_31 = natsortfiles({image_file_names_31.name});
+% image_file_names_31'
+T_31 = saveTransformTable(fullfile('/Users/galileo/dati/registered_brains_completed/993031/processed', 'transformations'), image_file_names_31, reference_size);
 
-%% Done. Extras below.
+%% When done, tabulate the ROI data (from cellprofiler analysis and registration)
 %% red (TH)
 
 % load the reference brain annotations
@@ -121,9 +127,9 @@ end
 
 object_tag = 'red';
 braincolor = 'r';
-T_roi = Register_and_Tabulate_Rois(object_tag, image_folder, save_file_name, av, st, tv, microns_per_pixel, microns_per_pixel_after_downsampling, reference_size);
+T_roi = Register_and_Tabulate_Rois(object_tag, save_folder, save_file_name, av, st, tv, microns_per_pixel, microns_per_pixel_after_downsampling, reference_size);
 
-
+                                  
 
 black_brain = false;
 fwireframe = [];
@@ -132,7 +138,7 @@ fwireframe = plotWireFrame(T_roi, braincolor, black_brain, fwireframe, microns_p
 
 %% green (rabies)
 object_tag = 'green';
-T_roi = Register_and_Tabulate_Rois(object_tag, image_folder, save_file_name, av, st, tv, microns_per_pixel, microns_per_pixel_after_downsampling, reference_size);
+T_roi = Register_and_Tabulate_Rois(object_tag, save_folder, save_file_name, av, st, tv, microns_per_pixel, microns_per_pixel_after_downsampling, reference_size);
 braincolor = 'g';
 
 
