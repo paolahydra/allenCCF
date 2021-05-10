@@ -27,10 +27,14 @@ bregma = allenCCFbregma(); % bregma position in reference data space
 atlas_resolution = 0.010; % mm
 
 
+% do not plot points outside the brain
+pltIdx = T_roi.avIndex~=1;
+
+
 % transform coordinates
-ap_pixel = bregma(1) - T_roi.AP_location./atlas_resolution; %OK
-ml_pixel = bregma(3) + T_roi.ML_location./atlas_resolution; %OK
-dv_pixel = bregma(2) + T_roi.DV_location./atlas_resolution; %OK
+ap_pixel = bregma(1) - T_roi.AP_location(pltIdx)./atlas_resolution; %OK
+ml_pixel = bregma(3) + T_roi.ML_location(pltIdx)./atlas_resolution; %OK
+dv_pixel = bregma(2) + T_roi.DV_location(pltIdx)./atlas_resolution; %OK
 
 
 % plot in wireframe

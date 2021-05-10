@@ -1,4 +1,6 @@
 addpath(genpath('/Users/galileo/GitHub/allenCCF'))
+rmpath(genpath('/Users/galileo/GitHub/WangLab_Allen'))
+addpath(genpath('/Users/galileo/GitHub/matlabUtilities/'))
 
 %% PP's preprocessing of axioscan images
 % 1. batch convert all the axioscans in series 2 tiff in axioscan. ADD NAME
@@ -8,13 +10,21 @@ edit axioscanTiff_slideCropper_PP % TO DO: fix input and output folder definitio
 
 
 
+%startingSingleSlices should be 2935x2060 or else registration errors will occour
+
+
+
 %% put all the filesystem and parameter definition here up front (moved from Process_Histology)
 
 % * remember to run one cell at a time, instead of the whole script at once *
 
 % directory of histology images
-image_folder = '/Users/galileo/dati/registered_brains_completed/993030'; %this has been fixed in the next version...
-% I should update myself to my own latest version...
+image_folder = '/Users/galileo/dati/registered_brains_completed/992234'; %this has been fixed in the next version...
+save_file_name = 'mouse992234_';  %check again this one
+
+microns_per_pixel = 2.60;
+wait2confirmROI = 0;    % if true, you will need to double-click to confirm each ROI. If false, a cropped image is automatically saved.
+                        % wait2confirmROI = 0; is much faster -- IF you don't make mistakes!
 
 % directory to save the processed images -- can be the same as the above image_folder
 % results will be put inside a new folder called 'processed' inside of this image_folder
@@ -24,7 +34,7 @@ cd(save_folder)
 % if the images are cropped (image_file_are_individual_slices = false),
 % name to save cropped slices as; e.g. the third cropped slice from the 2nd
 % image containing many slices will be saved as: save_folder/processed/save_file_name02_003.tif
-save_file_name = 'mouse993030_';  %check again this one
+
 
 % if the images are individual slices (as opposed to images of multiple
 % slices, which must be cropped using the cell CROP AND SAVE SLICES)
@@ -48,7 +58,7 @@ gain = 3.3;   % PP- for visualization only during cropping, and for atlas alignm
 
 % size in pixels of reference atlas brain coronal slice, typically 800 x 1140
 atlas_reference_size = [800 1140]; 
-
+reference_size = [1320         800        1140]; %this is reloaded later as size(tv)
 
 % -----------------------
 % auto: naming definition
@@ -101,11 +111,11 @@ T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), ima
 % fig_table = tabulateImageInfo(image_file_names, save_folder, T) %check
 % original size of images %not a general purpose function
 %% load a reference table to check previous registration parameters
-sf = '/Users/galileo/dati/registered_brains_completed/993031/preprocessed';
+sf = '/Users/galileo/dati/registered_brains_completed/993031/startingSingleSlices/preprocessed';
 image_file_names_31 = dir(fullfile(sf, '*.tif')); % get the contents of the image_folder
 image_file_names_31 = natsortfiles({image_file_names_31.name});
 % image_file_names_31'
-T_31 = saveTransformTable(fullfile('/Users/galileo/dati/registered_brains_completed/993031/processed', 'transformations'), image_file_names_31, reference_size);
+T_31 = saveTransformTable(fullfile('/Users/galileo/dati/registered_brains_completed/993031/startingSingleSlices/processed', 'transformations'), image_file_names_31, reference_size);
 
 %% When done, tabulate the ROI data (from cellprofiler analysis and registration)
 %% red (TH)
@@ -142,5 +152,10 @@ T_roi = Register_and_Tabulate_Rois(object_tag, save_folder, save_file_name, av, 
 braincolor = 'g';
 
 
-black_brain = false;
-fwireframe = plotWireFrame(T_roi, braincolor, black_brain, fwireframe );
+% black_brain = false;
+% fwireframe = plotWireFrame(T_roi, braincolor, black_brain, fwireframe );
+
+
+%% script for further analysis of ROIs and plotting
+edit analyzeDistributionOfCells
+

@@ -1,14 +1,14 @@
-function S = loadTabDataFromMultipleBrains(folders2Include, plotFWire)
+function S = loadTabDataFromMultipleBrains(folders2Include, plotFWire, object_tag)
 % T_roi has already beed produced (Register_and_Tabulate_Rois). 
 % Here T_rois will be loaded for multiple brains to be compared
 % 
 % specify inputs and settings:
 % folders2Include = uipickfiles('FilterSpec', '/Users/galileo/dati/registered_brains_completed');
 % plotFWire = 1;
-
+% object_tag = 'green'; %'green' for rabies cells
 %%
+
 if plotFWire
-    object_tag = 'green'; %'green' for rabies cells
     black_brain = false;
     microns_per_pixel = 3.8852;
     microns_per_pixel_after_downsampling = 10;
@@ -31,4 +31,6 @@ for i =1:length(folders2Include)
     end
 end
 
+% legend('', 'brain 1', 'brain 2')
+% legend('boxoff')
 end

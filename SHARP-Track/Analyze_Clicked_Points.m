@@ -81,7 +81,7 @@ for object_num = objects
 
     % plot points on the wire frame brain
     figure(fwireframe); hold on
-    hp = plot3(curr_objectPoints(:,1), curr_objectPoints(:,3), curr_objectPoints(:,2), '.','linewidth',2, 'color',[ProbeColors(object_num,:) .2],'markers',10);   
+    hp = plot3(curr_objectPoints(:,1), curr_objectPoints(:,3), curr_objectPoints(:,2), '.','linewidth',2, 'color','g','markers',30);   
 
     % use the point's position in the atlas to get the AP, DV, and ML coordinates
     ap = -(curr_objectPoints(:,1)-bregma(1))*atlas_resolution;
