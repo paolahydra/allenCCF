@@ -16,11 +16,19 @@
 % make SliceFlipper such that it reads and saves original (not _processed) images
 close all
 folder_preprocessed_images = fullfile(save_folder, 'preprocessed');
-if ~exist(folder_preprocessed_images)
+if ~exist(folder_preprocessed_images, 'dir')
     mkdir(folder_preprocessed_images)
     for f = 1: length(image_file_names)
-        fname = fullfile(image_folder, image_file_names{f});
+        fname = fullfile(save_folder, image_file_names{f});
         copyfile(fname, folder_preprocessed_images)
+    end
+else
+    d = dir(fullfile(folder_preprocessed_images, '*.tif'));
+    if isempty(d)
+        for f = 1: length(image_file_names)
+            fname = fullfile(save_folder, image_file_names{f});
+            copyfile(fname, folder_preprocessed_images)
+        end
     end
 end            
 % this takes images from folder_processed_images ([save_folder/processed]),

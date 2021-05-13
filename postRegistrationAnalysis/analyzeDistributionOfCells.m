@@ -49,6 +49,27 @@ folder2save = '/Users/galileo/dati/registered_brains_completed/figures_993030_99
 mkdir(folder2save)
 cd(folder2save)
 
+%% plot brain wire with all cells (much faster with brainwire precalculated!!)
+black_brain = false;
+fwireframe = [];
+for i = 1:length(S)
+    fwireframe = plotWireFrame(S(i).T_roi, S(i).braincolor, black_brain, fwireframe, microns_per_pixel, microns_per_pixel_after_downsampling );
+end
+makeVideo = 0;
+if makeVideo  
+    WriterObj = VideoWriter('allenCCF_allCells_Root_movie_full.mp4', 'MPEG-4');
+    WriterObj.FrameRate=30;
+    open(WriterObj);
+    for f = -37:322
+        view([f, 22])
+        drawnow;
+        frame = getframe(fwireframe);
+        writeVideo(WriterObj,frame);
+    end
+    close(WriterObj);
+end
+
+
 %% find unique targets and sort them
 for i = 1:length(S)
     
@@ -116,6 +137,9 @@ VTA = find(strcmp(st.name,'Ventral tegmental area'));
 CUN = find(strcmp(st.name,'Cuneiform nucleus'));
 PPN = find(strcmp(st.name,'Pedunculopontine nucleus'));
 
+VIIN = find(strcmp(st.name, 'Facial motor nucleus'));
+PCRT = find(strcmp(st.name, 'Parvicellular reticular nucleus'));
+IRT = find(strcmp(st.name, 'Intermediate reticular nucleus'));
 %% Create the plots
 szAP = size(tv,1);
 szDV = size(tv,2);
@@ -158,10 +182,11 @@ if makeVideo
         end
     end
     close(WriterObj);
+    export_fig('SNR_RRF_outline_withRoot.png', '-nocrop', '-png', '-m5')
 end
-export_fig('SNR_RRF_outline_withRoot.png', '-nocrop', '-png', '-m5')
+
 delete(handles.root)
-export_fig('SNR_RRF_outline.png', '-nocrop', '-png', '-m5')
+% export_fig('SNR_RRF_outline.png', '-nocrop', '-png', '-m5')
 %% add extra regions
 totHandles = length(ax.Children);
 isROI = av==MBRN; % >0 for original av, >1 for by_index
@@ -335,7 +360,9 @@ end
 for i = 1:length(S)
     % first add only SNR and SNC cells, consider both sides (there are
     % sometimes very few cells in the contra side too)
-    delete(p)
+    if i == 1 & exist('p', 'var')
+        delete(p)
+    end
     S(i).pltIdx = S(i).T_roi.avIndex == SNR ...
         | S(i).T_roi.avIndex == SNC ...
         | S(i).T_roi.avIndex == RR ...
@@ -488,3 +515,9 @@ if makeVideo
     end
     close(WriterObj);
 end
+
+
+%% make subplots with points from a single brain (rows), and with different views (perhaps get rid of the TH cells)
+
+%% then focus on SN(r) only, and plot overlapping distributions for each ADV direction (clean it up)
+

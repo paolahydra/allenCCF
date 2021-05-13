@@ -1,41 +1,65 @@
+% This software is based on:
+% https://github.com/cortex-lab/allenCCF/
+% Arber lab mainteined repository (forked from cortex-lab):
+% https://github.com/paolahydra/allenCCF/tree/sliceRegistration
+%
+% % The following are needed for full functionality:
+% Images of mouse brain slices (individually cropped or with multiple slices per image; coronal, sagittal, or transverse)
+% Know the resolution (in microns per pixel) of these images
+% A computer mouse with a scroll wheel
+% MATLAB (R2017 or above used for testing)
+% This repository. Add all folders and subfolders to your MATLAB path. All user-oriented scripts are in the 'SHARP-Track' folder.
+% The npy-matlab repository: http://github.com/kwikteam/npy-matlab
+% The Allen Mouse Brain Atlas volume and annotations (download all 4 files
+% from this link: http://data.cortexlab.net/allenCCF/ )
+
+
 addpath(genpath('/Users/galileo/GitHub/allenCCF'))
 rmpath(genpath('/Users/galileo/GitHub/WangLab_Allen'))
 addpath(genpath('/Users/galileo/GitHub/matlabUtilities/'))
 
-%% PP's preprocessing of axioscan images
-% 1. batch convert all the axioscans in series 2 tiff in axioscan. ADD NAME
-% -- perhaps avoid saturating right tail
-% 2. split in single figures using my matlab code: MODIFY!
-edit axioscanTiff_slideCropper_PP % TO DO: fix input and output folder definition. Check frame size for cropping (make it standard)
+% directory of reference atlas files
+pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_index.npy');
+structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
+template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
 
+% plane to view ('coronal', 'sagittal', 'transverse')
+plane = 'coronal';
 
-
-%startingSingleSlices should be 2935x2060 or else registration errors will occour
-
-
-
-%% put all the filesystem and parameter definition here up front (moved from Process_Histology)
-
-% * remember to run one cell at a time, instead of the whole script at once *
+%% set, and run one cell per time as needed:
 
 % directory of histology images
 image_folder = '/Users/galileo/dati/registered_brains_completed/992234'; %this has been fixed in the next version...
-save_file_name = 'mouse992234_';  %check again this one
+save_file_name = 'mouse_992234_'; 
 
-microns_per_pixel = 2.60;
+microns_per_pixel = 3.8852;
 wait2confirmROI = 0;    % if true, you will need to double-click to confirm each ROI. If false, a cropped image is automatically saved.
                         % wait2confirmROI = 0; is much faster -- IF you don't make mistakes!
 
 % directory to save the processed images -- can be the same as the above image_folder
 % results will be put inside a new folder called 'processed' inside of this image_folder
 save_folder = fullfile(image_folder, 'startingSingleSlices');
-cd(save_folder)
+cd(image_folder)
+
+
+%% PP's preprocessing of axioscan images
+% 1. batch convert all the axioscans ito tiff in ImageJ, using the macro: 
+% batch_convert2tiff_highestResSeries_general.ijm.  Depending on how
+% your images were acquired, you may want to choose the highest resolution
+% series, or the second-highest one. For cell detection, I have had good 
+% results for cell detection starting from an image with 3.9 um per pixel.
+% -- avoid saturating the right tail of the histogram.
+
+axioscanTiff_slideCropper_PP(image_folder, save_file_name, save_folder, microns_per_pixel, wait2confirmROI);
+%startingSingleSlices should be 2935x2060 or else registration errors will occour
+
 
 % if the images are cropped (image_file_are_individual_slices = false),
 % name to save cropped slices as; e.g. the third cropped slice from the 2nd
 % image containing many slices will be saved as: save_folder/processed/save_file_name02_003.tif
 
-
+%%
 % if the images are individual slices (as opposed to images of multiple
 % slices, which must be cropped using the cell CROP AND SAVE SLICES)
 image_files_are_individual_slices = true;
@@ -46,7 +70,6 @@ use_already_downsampled_image = false;
 % pixel size parameters: microns_per_pixel of large images in the image
 % folder (if use_already_downsampled_images is set to false);
 % microns_per_pixel_after_downsampling should typically be set to 10 to match the atlas
-microns_per_pixel = 3.8852;
 microns_per_pixel_after_downsampling = 10;
 
 % ----------------------
@@ -159,3 +182,5 @@ braincolor = 'g';
 %% script for further analysis of ROIs and plotting
 edit analyzeDistributionOfCells
 
+% memo:
+% http://seaborn.pydata.org/tutorial/distributions.html#kernel-density-estimation
