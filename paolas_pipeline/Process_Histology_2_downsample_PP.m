@@ -19,7 +19,12 @@ if ~use_already_downsampled_image
     for f = 1: length(image_file_names)
         fname = fullfile(folder_preprocessed_images, image_file_names{f});
         % load histology image
-        image = imread(fname);
+        INFO = imfinfo(fname);
+        nChannels = length(INFO);
+        clear image
+        for ch = 1:nChannels
+            image(:,:,ch) = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
+        end
         
         % resize (downsample) image to reference atlas size
         original_image_size = size(image);

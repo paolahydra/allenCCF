@@ -34,7 +34,13 @@ elseif size(ud.current_slice_image,1)>1500
     end
 end
 
-imshow(ud.current_slice_image*ud.gain + ud.grid)
+if size(ud.current_slice_image*ud.gain,3) > 3
+    image2show = ud.current_slice_image(:,:,2:4);
+    ud.grid = ud.grid(:,:,2:4);
+else
+    image2show = ud.current_slice_image;
+end
+imshow(image2show*ud.gain + ud.grid)
 title(['Slice ' num2str(ud.slice_num) ' / ' num2str(ud.total_num_files)])
 set(slice_figure, 'UserData', ud);
 
@@ -69,7 +75,13 @@ ud = get(slice_figure, 'UserData');
 
 switch lower(keydata.Key)   
     case 'leftarrow' % save and previous slice
-        imwrite(ud.current_slice_image, fullfile(folder_preprocessed_images, ud.processed_image_name))
+%         imwrite(ud.current_slice_image, fullfile(folder_preprocessed_images, ud.processed_image_name))   
+        fname = fullfile(folder_preprocessed_images, ud.processed_image_name);
+        imwrite(ud.current_slice_image(:,:,1), fname);
+        for i = 2:size(ud.processed_image_name, 3)
+            imwrite(ud.current_slice_image(:,:,i), fname, 'WriteMode', 'append');
+        end
+        
         rotate_angle = ud.rotate_angle;
         flipped = ud.flipped;
         save(fullfile(folder_preprocessed_images, sprintf('%s_transf.mat',ud.processed_image_name)), 'rotate_angle', 'flipped');
@@ -77,7 +89,13 @@ switch lower(keydata.Key)
         ud = load_next_slice(ud,folder_preprocessed_images);
 
     case 'rightarrow' % save and next slice      
-        imwrite(ud.current_slice_image, fullfile(folder_preprocessed_images, ud.processed_image_name))
+%         imwrite(ud.current_slice_image, fullfile(folder_preprocessed_images, ud.processed_image_name))
+        fname = fullfile(folder_preprocessed_images, ud.processed_image_name);
+        imwrite(ud.current_slice_image(:,:,1), fname);
+        for i = 2:size(ud.current_slice_image, 3)
+            imwrite(ud.current_slice_image(:,:,i), fname, 'WriteMode', 'append');
+        end
+        
         rotate_angle = ud.rotate_angle;
         flipped = ud.flipped;
         save(fullfile(folder_preprocessed_images, sprintf('%s_transf.mat',ud.processed_image_name)), 'rotate_angle', 'flipped');
@@ -145,10 +163,29 @@ switch lower(keydata.Key)
         if ud.slice_num < length(ud.processed_image_names)
             disp('switching order -- moving this image forward')
             next_processed_image_name = ud.processed_image_names{ud.slice_num+1};
-            next_slice_image = imread(fullfile(folder_preprocessed_images, next_processed_image_name));
-
-            imwrite(next_slice_image, fullfile(folder_preprocessed_images, ud.processed_image_name))            
-            imwrite(ud.current_slice_image, fullfile(folder_preprocessed_images, next_processed_image_name))
+%             next_slice_image = imread(fullfile(folder_preprocessed_images, next_processed_image_name));
+            fname = fullfile(folder_preprocessed_images, next_processed_image_name);
+            INFO = imfinfo(fname);
+            nChannels = length(INFO);
+            clear A
+            for ch = 1:nChannels  % only use the first three channels (as the last one is often empty/noisy)
+                A(:,:,ch) = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
+            end
+            next_slice_image = A;
+    
+%             imwrite(next_slice_image, fullfile(folder_preprocessed_images, ud.processed_image_name))  
+            fname = fullfile(folder_preprocessed_images, ud.processed_image_name);
+            imwrite(ud.current_slice_image(:,:,1), fname);
+            for i = 2:size(ud.current_slice_image, 3)
+                imwrite(next_slice_image(:,:,i), fname, 'WriteMode', 'append');
+            end
+            
+%             imwrite(ud.current_slice_image, fullfile(folder_preprocessed_images, next_processed_image_name))
+            fname = fullfile(folder_preprocessed_images, next_processed_image_name);
+            imwrite(ud.current_slice_image(:,:,1), fname);
+            for i = 2:size(ud.current_slice_image, 3)
+                imwrite(ud.current_slice_image(:,:,i), fname, 'WriteMode', 'append');
+            end
             
             ud.current_slice_image = next_slice_image; 
             ud.size = size(ud.current_slice_image); 
@@ -172,7 +209,12 @@ end
 
 
 % in all cases, update image and title
-imshow(ud.current_slice_image*ud.gain+ud.grid)
+if size(ud.current_slice_image*ud.gain,3) > 3
+    image2show = ud.current_slice_image(:,:,2:4);
+else
+    image2show = ud.current_slice_image;
+end
+imshow(image2show*ud.gain + ud.grid)
 title(['Slice ' num2str(ud.slice_num) ' / ' num2str(ud.total_num_files)])
 
 
@@ -180,8 +222,16 @@ set(slice_figure, 'UserData', ud);
 
 function ud = load_next_slice(ud,folder_processed_images)
     ud.processed_image_name = ud.processed_image_names{ud.slice_num};
-    ud.current_slice_image = imread(fullfile(folder_processed_images, ud.processed_image_name));
-
+%     ud.current_slice_image = imread(fullfile(folder_processed_images, ud.processed_image_name));
+    fname = fullfile(folder_processed_images, ud.processed_image_name);
+    INFO = imfinfo(fname);
+    nChannels = length(INFO);
+    clear A
+    for ch = 1:nChannels  % only use the first three channels (as the last one is often empty/noisy)
+        A(:,:,ch) = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
+    end
+    ud.current_slice_image = A;
+    
     % pad if possible (if small enough)
     try; ud.current_slice_image = padarray(ud.current_slice_image, [floor((ud.reference_size(1) - size(ud.current_slice_image,1)) / 2) + mod(size(ud.current_slice_image,1),2) ...
                                                   floor((ud.reference_size(2) - size(ud.current_slice_image,2)) / 2) + mod(size(ud.current_slice_image,2),2)],0);
@@ -207,7 +257,12 @@ function ud = load_next_slice(ud,folder_processed_images)
     ud.grid = imresize(ud.grid, ud.size(1:2)); 
     ud.rotate_angle = 0;
     
-    imwrite(ud.current_slice_image, fullfile(folder_processed_images, ud.processed_image_name)) 
+%     imwrite(ud.current_slice_image, fullfile(folder_processed_images, ud.processed_image_name)) 
+    fname = fullfile(folder_processed_images, ud.processed_image_name);
+    imwrite(ud.current_slice_image(:,:,1), fname);
+    for i = 2:size(ud.current_slice_image, 3)
+        imwrite(ud.current_slice_image(:,:,i), fname, 'WriteMode', 'append');
+    end
 
 
 % function to rotate slice by scrolling
@@ -219,7 +274,12 @@ ud = get(fig, 'UserData');
 ud.rotate_angle = ud.rotate_angle + evt.VerticalScrollCount*.75;
 
 ud.current_slice_image = imrotate(ud.original_ish_slice_image,ud.rotate_angle,'nearest','crop');
-imshow(ud.current_slice_image*ud.gain+ud.grid)
+if size(ud.current_slice_image*ud.gain,3) > 3
+    image2show = ud.current_slice_image(:,:,2:4);
+else
+    image2show = ud.current_slice_image;
+end
+imshow(image2show*ud.gain + ud.grid)
 title(['Slice ' num2str(ud.slice_num) ' / ' num2str(ud.total_num_files)])
 
 set(fig, 'UserData', ud);

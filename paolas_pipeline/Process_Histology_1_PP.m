@@ -20,9 +20,17 @@ if ~exist(folder_preprocessed_images)
     mkdir(folder_preprocessed_images)
     for f = 1: length(image_file_names)
         fname = fullfile(image_folder, image_file_names{f});
-        copyfile(fname, folder_preprocessed_images)
+        [status, msg, msgID] = copyfile(fname, folder_preprocessed_images);
     end
-end            
+else 
+    filelist = dir(fullfile(folder_preprocessed_images, '*.tif*'));
+    if isempty(filelist)
+        for f = 1: length(image_file_names)
+            fname = fullfile(image_folder, image_file_names{f});
+            [status, msg, msgID] = copyfile(fname, folder_preprocessed_images);
+        end
+    end
+end
 % this takes images from folder_processed_images ([save_folder/processed]),
 % and allows you to rotate, flip, sharpen, crop, and switch their order, so they
 % are in anterior->posterior or posterior->anterior order, and aesthetically pleasing

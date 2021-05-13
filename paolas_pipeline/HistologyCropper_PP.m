@@ -82,8 +82,11 @@ try % get first slice ROI
     ud_histology.slice_image = im(pos(2):pos(2)+pos(4), pos(1):pos(1)+pos(3), :);
     
     
-    imwrite(ud_histology.slice_image, fullfile(save_folder, ...
-        [ud_histology.save_file_name num2str(ud_histology.ordinal,'%.2d') '.' num2str(ud_histology.slice_num(ud_histology.file_num),'%.3d') '.tif']))
+    fname = fullfile(save_folder,  [ud_histology.save_file_name num2str(ud_histology.ordinal,'%.2d') '.' num2str(ud_histology.slice_num(ud_histology.file_num),'%.3d') '.tif']);
+    imwrite(ud_histology.slice_image(:,:,1), fname);
+    for i = 2:size(ud_histology.slice_image, 3)
+        imwrite(ud_histology.slice_image(:,:,i), fname, 'WriteMode', 'append');
+    end   
     disp([ud_histology.save_file_name num2str(ud_histology.ordinal,'%.2d') '.' num2str(ud_histology.slice_num(ud_histology.file_num),'%.3d') ' saved!'])
     
     ud_histology.slice_num(ud_histology.file_num) = ud_histology.slice_num(ud_histology.file_num) + 1;
