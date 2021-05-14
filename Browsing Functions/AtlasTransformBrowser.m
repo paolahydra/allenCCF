@@ -1,4 +1,4 @@
-function f = AtlasTransformBrowser(f, templateVolume, annotationVolume, structureTree, slice_figure, save_location, save_suffix, plane)
+function f = allenAtlasBrowser(f, templateVolume, annotationVolume, structureTree, slice_figure, save_location, save_suffix, plane, transformationType)
 % ------------------------------------------------
 % Browser for the allen atlas ccf data in matlab.
 % ------------------------------------------------
@@ -26,7 +26,7 @@ ud.currentSlice = ud.bregma(1);
 ud.currentAngle = zeros(2,1);
 ud.scrollMode = 0;
 
-ud.transform_type = 'projective'; %can change to 'affine' or 'pwl'
+ud.transform_type = transformationType; %'projective'; %can change to 'affine' or 'pwl'
 
 ud.oldContour = [];
 ud.showContour = false;
@@ -49,6 +49,12 @@ ud.slice_shift = 0;
 ud.loaded_slice = 0;
 ud.slice_at_shift_start = 1;
 ud.text = [];
+if isfile(fullfile(save_location, 'transformations', 'dataTable_transformations.csv') )
+    ud.T = readtable(fullfile(save_location, 'transformations', 'dataTable_transformations.csv'));
+else
+    ud.T = [];
+end
+
 
 reference_image = squeeze(templateVolume(ud.currentSlice,:,:));
 ud.im = plotTVslice(reference_image);
@@ -57,7 +63,7 @@ ud.ref = uint8(squeeze(templateVolume(ud.currentSlice,:,:)));
 ud.curr_im = uint8(squeeze(templateVolume(ud.currentSlice,:,:)));
 ud.curr_slice_trans = uint8(squeeze(templateVolume(ud.currentSlice,:,:)));
 ud.im_annotation = squeeze(annotationVolume(ud.currentSlice,:,:));
-ud.atlas_boundaries = zeros(ud.ref_size,'uint16');;
+ud.atlas_boundaries = zeros(ud.ref_size,'uint16');
 ud.offset_map = zeros(ud.ref_size);
 ud.loaded = 0;
 
@@ -83,11 +89,11 @@ set(f, 'WindowButtonMotionFcn',@(f,k)fh_wbmfcn(f, allData, slice_figure, save_lo
 function display_controls
 fprintf(1, '\n Controls: \n');
 fprintf(1, '--------- \n');
-fprintf(1, 'Navigation: \n');
+fprintf(1, 'Navigation in the atlas figure: \n');
 fprintf(1, 'up: scroll through A/P angles (for coronal sections)\n');
 fprintf(1, 'right: scroll through M/L angles  (for coronal sections)\n');
-fprintf(1, 'down: scroll through slices \n');
-fprintf(1, 'scroll: move between slices \n');
+fprintf(1, 'down: scroll through atlas slices \n');
+fprintf(1, 'left: move between target slices to be registered\n');
 
 fprintf(1, '\n Registration: \n');
 fprintf(1, 't: toggle mode where clicks are logged for transform \n');
@@ -98,6 +104,7 @@ fprintf(1, 'x: save transform and current atlas location \n');
 fprintf(1, 'l: load transform for current slice; press again to load probe points \n');
 fprintf(1, 's: save current probe \n');
 fprintf(1, 'd: delete most recent probe point or transform point \n');
+fprintf(1, 'e: erase all transform points \n');
 fprintf(1, 'w: enable/disable probe viewer mode for current probe  \n');
 
 fprintf(1, '\n Viewing modes: \n');
@@ -632,6 +639,12 @@ switch key_letter
             ud.pointHands{ud.currentProbe, 2} = ud.pointHands{ud.currentProbe, 2}(1:end-1);
             disp('probe point deleted')
         end
+    case 'e' 
+        if ud.getPoint_for_transform
+            ud.current_pointList_for_transform = zeros(0,2); set(ud.pointHands_for_transform(:), 'Visible', 'off'); 
+            ud.pointHands_for_transform = []; ud_slice.pointList = []; set(slice_figure, 'UserData', ud_slice);
+            disp('current transform erased');        
+        end
 end
 % x -- save transform and current slice position and angle
 if strcmp(key_letter,'x') 
@@ -669,6 +682,7 @@ if strcmp(key_letter,'x')
         save_transform.allen_location = allen_location;
         % save all this
         save(fullfile(folder_transformations, [slice_name '_transform_data.mat']), 'save_transform');
+        ud.T = saveTransformTable(folder_transformations, ud_slice.processed_image_names, [0 ud.ref_size]);
         disp('atlas location saved')
         
         % save transformed histology image
@@ -783,6 +797,9 @@ elseif ud.scrollMode == 3
         ud.curr_im = ud.ref; set(f, 'UserData', ud);   
         set(ud.text,'Visible','off');
         fill([5 5 250 250],[5 50 50 5],[0 0 0]); ud.text(end+1) = text(5,15,['Slice ' num2str(ud.slice_at_shift_start+ud.slice_shift) ' - no transform'],'color','white');        
+        if ~isempty(ud.T)
+            disp(ud.T(ud.slice_at_shift_start+ud.slice_shift,{'sliceNum', 'suggestedAllenSlice', 'DV_deg', 'ML_deg'}))
+        end
     end  
         
 end  

@@ -52,7 +52,7 @@ sliceBrowser(slice_figure_browser, folder_processed_images, f, reference_size);
 % use application in Atlas Transform Viewer
 % use this function if you have a processed_images_folder with appropriately processed .tif histology images
 f = AtlasTransformBrowser(f, tv_plot, av_plot, st, slice_figure_browser, folder_processed_images, probe_save_name_suffix, plane, transformationType); 
-
+f = AtlasTransformBrowser(f, templateVolume, annotationVolume, structureTree, slice_figure, save_location, save_suffix, plane)
 %T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
 
 % use the simpler version, which does not interface with processed slice images
