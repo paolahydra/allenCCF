@@ -1,4 +1,4 @@
-function f = allenAtlasBrowser(f, templateVolume, annotationVolume, structureTree, slice_figure, save_location, save_suffix, plane, transformationType)
+function f = AtlasTransformBrowser(f, templateVolume, annotationVolume, structureTree, slice_figure, save_location, save_suffix, plane, transformationType)
 % ------------------------------------------------
 % Browser for the allen atlas ccf data in matlab.
 % ------------------------------------------------
@@ -801,6 +801,8 @@ elseif ud.scrollMode == 3
         fill([5 5 250 250],[5 50 50 5],[0 0 0]); ud.text(end+1) = text(5,15,['Slice ' num2str(ud.slice_at_shift_start+ud.slice_shift) ' - no transform'],'color','white');        
         if ~isempty(ud.T)
             disp(ud.T(ud.slice_at_shift_start+ud.slice_shift,{'sliceNum', 'suggestedAllenSlice', 'DV_deg', 'ML_deg'}))
+        else
+            disp('Cannot load current transformations to guide new ones. Check folder specifications.') 
         end
     end  
         
