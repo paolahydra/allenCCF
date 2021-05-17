@@ -23,7 +23,7 @@ atlas_reference_size_um = [8000 11400];
 reference_size = round(atlas_reference_size_um/imResolution_umperpixel);
 
 warning('off')
-for f = 1:length(image_file_names)
+for f = 6:6%length(image_file_names)
     fprintf('Opening %s...\n',image_file_names{f})
     disp('Click on the center of each slice.')
     disp('When done, close the figure to move on to the next one.')

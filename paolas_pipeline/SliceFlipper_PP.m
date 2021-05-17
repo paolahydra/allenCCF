@@ -36,7 +36,7 @@ end
 
 if size(ud.current_slice_image*ud.gain,3) > 3
     image2show = ud.current_slice_image(:,:,2:4);
-    ud.grid = ud.grid(:,:,2:4);
+    ud.grid = ud.grid(:,:,1:3);
 else
     image2show = ud.current_slice_image;
 end
@@ -62,6 +62,10 @@ fprintf(1, 'c: crop slice further \n');
 fprintf(1, 'f: flip horizontally \n');
 fprintf(1, 'w: switch order (move image forward) \n');
 fprintf(1, 'r: reset to original \n');
+fprintf(1, 'n: go to slice num... \n');
+fprintf(1, 'i: increase gain... \n');
+fprintf(1, 'd: decrease gain... \n');
+fprintf(1, 'v: change channel mode view \n'); % under construction
 fprintf(1, 'delete: delete current image \n');
 
 % --------------------
@@ -78,7 +82,7 @@ switch lower(keydata.Key)
 %         imwrite(ud.current_slice_image, fullfile(folder_preprocessed_images, ud.processed_image_name))   
         fname = fullfile(folder_preprocessed_images, ud.processed_image_name);
         imwrite(ud.current_slice_image(:,:,1), fname);
-        for i = 2:size(ud.processed_image_name, 3)
+        for i = 2:size(ud.current_slice_image, 3)
             imwrite(ud.current_slice_image(:,:,i), fname, 'WriteMode', 'append');
         end
         
@@ -110,7 +114,31 @@ switch lower(keydata.Key)
         ud.processed_image_names = natsortfiles({processed_images.name});
         ud.total_num_files = size(processed_images,1); disp(['found ' num2str(ud.total_num_files) ' processed slice images']);
         ud = load_next_slice(ud,folder_preprocessed_images);
-
+    
+    case 'n' %save and go to slice num...
+        fname = fullfile(folder_preprocessed_images, ud.processed_image_name);
+        imwrite(ud.current_slice_image(:,:,1), fname);
+        for i = 2:size(ud.current_slice_image, 3)
+            imwrite(ud.current_slice_image(:,:,i), fname, 'WriteMode', 'append');
+        end
+        
+        rotate_angle = ud.rotate_angle;
+        flipped = ud.flipped;
+        save(fullfile(folder_preprocessed_images, sprintf('%s_transf.mat',ud.processed_image_name)), 'rotate_angle', 'flipped');
+        
+        ud.slice_num = input('Go to slice num: ');
+        ud = load_next_slice(ud,folder_preprocessed_images);
+        
+    case 'i' %increase gain
+        ud.gain = ud.gain + 1;
+        disp(ud.gain)
+        ud = load_next_slice(ud,folder_preprocessed_images);
+        
+    case '-' %decrease gain
+        ud.gain = ud.gain - 1;
+        disp(ud.gain)
+        ud = load_next_slice(ud,folder_preprocessed_images);
+        
     case 'g' % grid
         if sum(ud.grid(:)) == 0
             ud.grid = zeros(size(ud.current_slice_image),class(ud.original_slice_image));
@@ -211,6 +239,7 @@ end
 % in all cases, update image and title
 if size(ud.current_slice_image*ud.gain,3) > 3
     image2show = ud.current_slice_image(:,:,2:4);
+    ud.grid = ud.grid(:,:,1:3);
 else
     image2show = ud.current_slice_image;
 end
@@ -227,10 +256,13 @@ function ud = load_next_slice(ud,folder_processed_images)
     INFO = imfinfo(fname);
     nChannels = length(INFO);
     clear A
-    for ch = 1:nChannels  % only use the first three channels (as the last one is often empty/noisy)
+    for ch = 1:nChannels  
         A(:,:,ch) = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
     end
     ud.current_slice_image = A;
+    
+    disp(['loaded ' ud.processed_image_name])
+    
     
     % pad if possible (if small enough)
     try; ud.current_slice_image = padarray(ud.current_slice_image, [floor((ud.reference_size(1) - size(ud.current_slice_image,1)) / 2) + mod(size(ud.current_slice_image,1),2) ...
@@ -276,6 +308,7 @@ ud.rotate_angle = ud.rotate_angle + evt.VerticalScrollCount*.75;
 ud.current_slice_image = imrotate(ud.original_ish_slice_image,ud.rotate_angle,'nearest','crop');
 if size(ud.current_slice_image*ud.gain,3) > 3
     image2show = ud.current_slice_image(:,:,2:4);
+    ud.grid = ud.grid(:,:,1:3);
 else
     image2show = ud.current_slice_image;
 end

@@ -19,14 +19,15 @@
 % * remember to run one section at a time, instead of the whole script at once *
 
 %%  always run: general settings (set once)
-addpath(genpath('C:\GitHub\allenCCF')) %clone the repository from : https://github.com/paolahydra/allenCCF/tree/sliceRegistration and change path here
-addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')); %check this directory
+addpath(genpath('/Users/galileo/GitHub/allenCCF'))
+rmpath(genpath('/Users/galileo/GitHub/WangLab_Allen'))
+addpath(genpath('/Users/galileo/GitHub/matlabUtilities/'))
 
-% set path to the reference atlas files 
-annotation_volume_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\annotation_volume_10um_by_index.npy';
-structure_tree_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\structure_tree_safe_2017.csv';
-template_volume_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\template_volume_10um.npy';
-
+% directory of reference atlas files
+pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_index.npy');
+structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
+template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
 
 % other stable settings:
 % plane to view ('coronal', 'sagittal', 'transverse')
@@ -37,9 +38,9 @@ transformationType = 'pwl';     %use 'projective', or 'pwl' (piece-wise linear: 
 
 %%  always run: specific settings for the brain to register:
 % move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = 'D:\userdata\FAIM_cavafran\BrainReg\Rabies_SC\Rabies_Cerv_uni2'; %change this
-image_tag = 'Rabies_Cerv_uni2';                                                 %change this
-microns_per_pixel = 2.60; %take this value from your tiff filename
+image_folder = '/Users/galileo/dati/registered_brains_completed/992232'; % change this
+image_tag = 'mouse_992232_';                                             % change this
+microns_per_pixel = 3.8852; %take this value from your tiff filename
 
 
 cd(image_folder)
@@ -84,11 +85,11 @@ microns_per_pixel_after_downsampling = 10;
 % ----------------------
 
 % increase gain if for some reason the images are not bright enough
-gain = 3.3;   % PP- for visualization only during cropping, and for atlas alignment
+gain = 4;   % PP- for visualization only during cropping, and for atlas alignment
 
 % size in pixels of reference atlas brain coronal slice, typically 800 x 1140
 atlas_reference_size = [800 1140]; 
-
+reference_size = [1320         800        1140]; %this is reloaded later as size(tv)
 
 % -----------------------
 % auto: naming definition
@@ -105,9 +106,14 @@ image_file_names = natsortfiles({image_file_names.name});
 Process_Histology_1_PP; 
 %this will interactively allow you to crop, flip, rotate (and permute - untested) slices
 
+% this can be quite fast if you don't dwell too much on rotations. 
 % NOTE May 2021: No need to rotate, nor crop, unless you want to.
 % Just check every slice and flip if necessary.
-% this step can be quite fast if you don't dwell too much on rotations/cropping. 
+
+% NOTE:
+% Images are saved in the 'preprocessed' folder only if you scroll through
+% each of them in this process. When you get to the last image, go back
+% once to save the last image too.
 
 % IMPORTANT:
 % no furter manipulation should be done to the images after this stage.
