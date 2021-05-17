@@ -134,7 +134,7 @@ switch lower(keydata.Key)
         disp(ud.gain)
         ud = load_next_slice(ud,folder_preprocessed_images);
         
-    case '-' %decrease gain
+    case 'd' %decrease gain
         ud.gain = ud.gain - 1;
         disp(ud.gain)
         ud = load_next_slice(ud,folder_preprocessed_images);
