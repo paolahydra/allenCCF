@@ -18,6 +18,7 @@
 
 % * remember to run one section at a time, instead of the whole script at once *
 
+
 %%  always run: general settings (set once)
 addpath(genpath('C:\GitHub\allenCCF')) %clone the repository from : https://github.com/paolahydra/allenCCF/tree/sliceRegistration and change path here
 addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')); %check this directory
@@ -35,15 +36,32 @@ plane = 'coronal';
 transformationType = 'pwl';     %use 'projective', or 'pwl' (piece-wise linear: more advanced).
 
 
-%%  always run: specific settings for the brain to register:
+%%  set once, then always run: specify paths and settings for the specific brain to register
 % move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = 'D:\userdata\FAIM_cavafran\BrainReg\Rabies_SC\Rabies_Cerv_uni2'; %change this
-image_tag = 'Rabies_Cerv_uni2';                                                 %change this
-microns_per_pixel = 2.60; %take this value from your tiff filename
+image_folder = '/Users/galileo/dati/registered_brains_completed/992234';   %change this
+image_tag = 'mouse_992234_';                                               %change this - use an unequivocal tag for your experiment
+microns_per_pixel = 3.8852; %take this value from your tiff filename
 
+% increase gain if for some reason the images are not bright enough
+gain = 5;   % for visualization only: during cropping or atlas alignment
+
+if ~strcmp( image_tag(end), '_')
+    image_tag = cat(2, image_tag, '_');
+end
 
 cd(image_folder)
 save_folder = fullfile(image_folder, 'startingSingleSlices');
+
+
+%% do once, then skip: save the script and then create a new version with specific parameters - continue with the new script.
+
+%save the script (generalPipeline.m)!!
+
+originalscript = which('generalPipeline');
+[a, b] = fileparts(originalscript);
+scriptname = fullfile(a, sprintf('generalPipeline_%s.m',image_tag(1:end-1)));
+copyfile(originalscript, scriptname)
+edit(scriptname)
 
 
 %% 1. do once, then skip: PP's preprocessing of axioscan images in ImageJ
@@ -79,21 +97,14 @@ use_already_downsampled_image = false;
 % microns_per_pixel_after_downsampling should typically be set to 10 to match the atlas
 microns_per_pixel_after_downsampling = 10;
 
-% ----------------------
+
 % additional parameters
-% ----------------------
-
-% increase gain if for some reason the images are not bright enough
-gain = 3.3;   % PP- for visualization only during cropping, and for atlas alignment
-
 % size in pixels of reference atlas brain coronal slice, typically 800 x 1140
 atlas_reference_size = [800 1140]; 
+reference_size = [1320 800 1140];
 
 
-% -----------------------
 % auto: naming definition
-% -----------------------
-
 % name of images, in order anterior to posterior or vice versa
 % once these are downsampled they will be named ['original name' '_processed.tif']
 image_file_names = dir([image_folder filesep '*.tif']); % get the contents of the image_folder
@@ -126,7 +137,9 @@ Process_Histology_1_PP;
 folder_preprocessed_images = fullfile(save_folder, 'preprocessed');     
 Process_Histology_2_downsample_PP; %this will automatically downsample your *preprocessed* images and save them in the 'processed' folder for registration.
 disp('Downsampled and boosted images were saved in the processed folder')
-% This also increases the gain for better visualization during registration.
+% This also increases the gain for better visualization during
+% registration. For some very dark images you may need to set a higher gain and
+% re-run this block.
 
 
 %% 5. Register each slice to the reference atlas
@@ -137,7 +150,24 @@ Navigate_Atlas_and_Register_Slices_PP;
 T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
 
 
-%%
+
+
+
+%% 6. do once: when finished with the registr to atlas, do this to register and tabulate the detected cells too.
+object_tag = 'green'; 
+tabulateData;
+
+%% plot?
+braincolor = 'g';
+fwireframe = [];
+black_brain = false;
+fwireframe = plotWireFrame(T_roi, braincolor, black_brain, fwireframe, microns_per_pixel, microns_per_pixel_after_downsampling );
+
+
+
+%% post-registration (still evaluate all mandatory blocks above before starting)
+edit analyzeDistributionOfCells
+
 
 
 

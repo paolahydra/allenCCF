@@ -30,7 +30,18 @@ if ~use_already_downsampled_image
         original_image_size = size(image);
         image = imresize(image, [round(original_image_size(1)*microns_per_pixel/microns_per_pixel_after_downsampling)  NaN]);
         image = image*gain;
+        
+        % to visualiye RGB
+        image = image(:,:,1:3);
         imwrite(image, fullfile(folder_processed_images, [image_file_names{f}(1:end-4) file_name_suffix '.tif']))
+        
+
+%         %% to save all the channels
+%         fname  = fullfile(folder_processed_images, [image_file_names{f}(1:end-4) file_name_suffix '.tif']);
+%         imwrite(image(:,:,1), fname);
+%         for i = 2:size(image, 3)
+%             imwrite(image(:,:,i), fname, 'WriteMode', 'append');
+%         end
     end
 end
 clear image original_image_size f   

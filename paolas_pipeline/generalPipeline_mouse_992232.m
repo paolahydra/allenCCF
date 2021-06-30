@@ -18,16 +18,16 @@
 
 % * remember to run one section at a time, instead of the whole script at once *
 
-%%  always run: general settings (set once)
-addpath(genpath('/Users/galileo/GitHub/allenCCF'))
-rmpath(genpath('/Users/galileo/GitHub/WangLab_Allen'))
-addpath(genpath('/Users/galileo/GitHub/matlabUtilities/'))
 
-% directory of reference atlas files
-pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
-annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_index.npy');
-structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
-template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
+%%  always run: general settings (set once)
+addpath(genpath('C:\GitHub\allenCCF')) %clone the repository from : https://github.com/paolahydra/allenCCF/tree/sliceRegistration and change path here
+addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')); %check this directory
+
+% set path to the reference atlas files 
+annotation_volume_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\annotation_volume_10um_by_index.npy';
+structure_tree_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\structure_tree_safe_2017.csv';
+template_volume_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\template_volume_10um.npy';
+
 
 % other stable settings:
 % plane to view ('coronal', 'sagittal', 'transverse')
@@ -36,16 +36,32 @@ plane = 'coronal';
 transformationType = 'pwl';     %use 'projective', or 'pwl' (piece-wise linear: more advanced).
 
 
-%%  always run: specific settings for the brain to register:
+%%  set once, then always run: specify paths and settings for the specific brain to register
 % move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = '/Users/galileo/dati/registered_brains_completed/992232'; % change this
-image_tag = 'mouse_992232_';                                             % change this
-microns_per_pixel = 3.8852; %take this value from your tiff filename
+image_folder = '/Users/galileo/dati/registered_brains_completed/992232';   %change this
+image_tag = 'mouse_992232_';                                               %change this - use an unequivocal tag for your experiment
+microns_per_pixel = 2.60; %take this value from your tiff filename
 
+% increase gain if for some reason the images are not bright enough
+gain = 5;   % for visualization only: during cropping or atlas alignment
+
+if ~strcmp( image_tag(end), '_')
+    image_tag = cat(2, image_tag, '_');
+end
 
 cd(image_folder)
 save_folder = fullfile(image_folder, 'startingSingleSlices');
 
+
+%% do once, then skip: save the script and then create a new version with specific parameters - continue with the new script.
+
+%save the script (generalPipeline.m)!!
+
+originalscript = which('generalPipeline');
+[a, b] = fileparts(originalscript);
+scriptname = fullfile(a, sprintf('generalPipeline_%s.m',image_tag(1:end-1)));
+copyfile(originalscript, scriptname)
+edit(scriptname)
 
 %% 1. do once, then skip: PP's preprocessing of axioscan images in ImageJ
 % 1. batch convert all the axioscans ito tiff in ImageJ, using the macro: 
@@ -84,12 +100,9 @@ microns_per_pixel_after_downsampling = 10;
 % additional parameters
 % ----------------------
 
-% increase gain if for some reason the images are not bright enough
-gain = 4;   % PP- for visualization only during cropping, and for atlas alignment
-
 % size in pixels of reference atlas brain coronal slice, typically 800 x 1140
 atlas_reference_size = [800 1140]; 
-reference_size = [1320         800        1140]; %this is reloaded later as size(tv)
+reference_size = [1320 800 1140];
 
 % -----------------------
 % auto: naming definition
@@ -106,14 +119,9 @@ image_file_names = natsortfiles({image_file_names.name});
 Process_Histology_1_PP; 
 %this will interactively allow you to crop, flip, rotate (and permute - untested) slices
 
-% this can be quite fast if you don't dwell too much on rotations. 
 % NOTE May 2021: No need to rotate, nor crop, unless you want to.
 % Just check every slice and flip if necessary.
-
-% NOTE:
-% Images are saved in the 'preprocessed' folder only if you scroll through
-% each of them in this process. When you get to the last image, go back
-% once to save the last image too.
+% this step can be quite fast if you don't dwell too much on rotations/cropping. 
 
 % IMPORTANT:
 % no furter manipulation should be done to the images after this stage.

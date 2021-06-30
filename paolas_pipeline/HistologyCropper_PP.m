@@ -1,5 +1,5 @@
 function HistologyCropper_PP(histology_figure, image_folder, save_folder, image_file_names, reference_size, save_file_name, ordinal, wait2confirmROI)
-global reference_size
+% global reference_size
 % set up histology figure
 ud_histology.file_num = 1;
 ud_histology.num_files = length(image_file_names);
@@ -46,7 +46,7 @@ end
 % use imrect to crop, and then save the cropped image in 'processed' folder
 % --------------------------------------------------------------------------
 function ud_histology = crop_and_save_image(ud_histology, histology_figure, save_folder, reference_size, wait2confirmROI)
-global reference_size
+% global reference_size
 try % get first slice ROI
     ud_histology = get(histology_figure, 'UserData');
     N_slicesInThisImage = ud_histology.slice_num(ud_histology.file_num);
