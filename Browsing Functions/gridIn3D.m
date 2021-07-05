@@ -1,8 +1,13 @@
 
 
-function contourHands = gridIn3D(volData, contourHeight, sliceSpacing, origin)
+function contourHands = gridIn3D(volData, contourHeight, sliceSpacing, origin, varargin)
 
 hold on;
+if nargin>4
+    contourColor = varargin{1};
+else
+    contourColor = 'w'; %[0 0 0 0.3];
+end
 
 % contours of a coronal slice, i.e. at one AP (x) location
 % xSlices = round(sliceSpacing/2):sliceSpacing:size(volData,1);
@@ -17,7 +22,7 @@ for x = xSlices
     cP = parseContours(c);
     
     % plot the contours    
-    contourHands{1}{end+1} = cellfun(@(yz)plot3(x*ones(1,size(yz,2)), yz(1,:), yz(2,:), 'Color', [0 0 0 0.3]), cP, 'uni', false);    
+    contourHands{1}{end+1} = cellfun(@(yz)plot3(x*ones(1,size(yz,2)), yz(1,:), yz(2,:), 'Color', contourColor), cP, 'uni', false);    
 end
 
 % contours at one ML location, i.e. sagittal slices
@@ -33,7 +38,7 @@ for x = xSlices
     cP = parseContours(c);
     
     % plot the contours    
-    contourHands{2}{end+1} = cellfun(@(yz)plot3(yz(2,:), x*ones(1,size(yz,2)), yz(1,:),  'Color', [0 0 0 0.3]), cP, 'uni', false);    
+    contourHands{2}{end+1} = cellfun(@(yz)plot3(yz(2,:), x*ones(1,size(yz,2)), yz(1,:),  'Color', contourColor), cP, 'uni', false);    
 end
 
 % Have elected to leave out the third possible axis - looks worse including
