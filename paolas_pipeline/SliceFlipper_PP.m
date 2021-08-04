@@ -35,8 +35,21 @@ elseif size(ud.current_slice_image,1)>1500
 end
 
 if size(ud.current_slice_image*ud.gain,3) > 3
-    image2show = ud.current_slice_image(:,:,2:4);
-    ud.grid = ud.grid(:,:,1:3);
+    figure
+    for ch_id = 1:4
+        subplot(2,2,ch_id), hold on
+        title(sprintf('channel %d', ch_id))
+        imshow(ud.current_slice_image(:,:,ch_id)*ud.gain);
+    end
+    answer = inputdlg('Please indicate max 3 channels to keep (e.g.: 1:3, or 1 2 4):');
+    if contains(answer, ':')
+       ud.channels2Keep = eval(answer{1});
+    else
+        ud.channels2Keep = str2num(answer{1});
+    end
+    image2show = ud.current_slice_image(:,:,ud.channels2Keep);
+    ud.grid = ud.grid(:,:,1:length(ud.channels2Keep));
+    close
 else
     image2show = ud.current_slice_image;
 end
@@ -238,8 +251,8 @@ end
 
 % in all cases, update image and title
 if size(ud.current_slice_image*ud.gain,3) > 3
-    image2show = ud.current_slice_image(:,:,2:4);
-    ud.grid = ud.grid(:,:,1:3);
+    image2show = ud.current_slice_image(:,:,ud.channels2Keep);
+    ud.grid = ud.grid(:,:,1:length(ud.channels2Keep));
 else
     image2show = ud.current_slice_image;
 end
@@ -258,7 +271,15 @@ function ud = load_next_slice(ud,folder_processed_images)
     clear A
     for ch = 1:nChannels  
         A(:,:,ch) = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
+%         A(ch).image = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
     end
+%     figure
+%     for ch_id = 1:nChannels
+%         subplot(2,2,ch_id), hold on
+%         title(sprintf('channel %d', ch_id))
+%         imshow(A(ch_id).image*ud.gain);
+%     end
+    
     ud.current_slice_image = A;
     
     disp(['loaded ' ud.processed_image_name])
@@ -307,8 +328,8 @@ ud.rotate_angle = ud.rotate_angle + evt.VerticalScrollCount*.75;
 
 ud.current_slice_image = imrotate(ud.original_ish_slice_image,ud.rotate_angle,'nearest','crop');
 if size(ud.current_slice_image*ud.gain,3) > 3
-    image2show = ud.current_slice_image(:,:,2:4);
-    ud.grid = ud.grid(:,:,1:3);
+    image2show = ud.current_slice_image(:,:,ud.channels2Keep);
+    ud.grid = ud.grid(:,:,1:length(ud.channels2Keep));
 else
     image2show = ud.current_slice_image;
 end
