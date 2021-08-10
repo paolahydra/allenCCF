@@ -19,14 +19,24 @@
 % * remember to run one section at a time, instead of the whole script at once *
 
 
-%%  always run: general settings (set once)
-addpath(genpath('C:\GitHub\allenCCF')) %clone the repository from : https://github.com/paolahydra/allenCCF/tree/sliceRegistration and change path here
-addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')); %check this directory
 
-% set path to the reference atlas files 
-annotation_volume_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\annotation_volume_10um_by_index.npy';
-structure_tree_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\structure_tree_safe_2017.csv';
-template_volume_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\template_volume_10um.npy';
+%% TO DO _ PAOLA:
+% 1. read in the actual images, not the downsampled, single channel one.
+% 2. make user that all the steps know how to handle multi-channel stacked
+% images - step 4 (processed downsampling does not right now)
+% 
+% 
+
+
+%%  always run: general settings (set once)
+addpath(genpath('/Users/galileo/GitHub/allenCCF'))
+% addpath(genpath('C:\GitHub\allenCCF')) %clone the repository from : https://github.com/paolahydra/allenCCF/tree/sliceRegistration and change path here
+
+pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+% pathToAtlas = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\';
+annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_index.npy');
+structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
+template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
 
 
 % other stable settings:
@@ -38,24 +48,35 @@ transformationType = 'pwl';     %use 'projective', or 'pwl' (piece-wise linear: 
 
 %%  set once, then always run: specify paths and settings for the specific brain to register
 % move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = '/Users/galileo/dati/registered_brains_completed/992234';   %change this
-image_tag = 'mouse_992234_';                                               %change this - use an unequivocal tag for your experiment
-microns_per_pixel = 3.8852; %take this value from your tiff filename
+input_folder = '/Users/galileo/dati/registered_brains_completed/Chiara';   %change this
+image_tag = 'MAX_Rabies_Cerv_uni_1_';                                               %change this - use an unequivocal tag for your experiment
+microns_per_pixel = 1.2980; %take this value from your tile metadata
 
 % increase gain if for some reason the images are not bright enough
-gain = 5;   % for visualization only: during cropping or atlas alignment
+gain = 1;   % for visualization only: during cropping or atlas alignment
 
 if ~strcmp( image_tag(end), '_')
     image_tag = cat(2, image_tag, '_');
 end
 
-cd(image_folder)
-save_folder = fullfile(image_folder, 'startingSingleSlices');
+cd(input_folder)
+image_folder = fullfile(input_folder, 'startingSingleSlices');
+if ~exist(image_folder, 'dir')
+    mkdir(image_folder);
+end
+save_folder = fullfile(image_folder, 'processed');
+if ~exist(save_folder, 'dir')
+    mkdir(save_folder);
+end
+
+%% do once, then skip: move your MAX_ full resolution images in the startingSingleSlices folder 
+% (which was just created inside your main folder)
 
 
 %% do once, then skip: save the script and then create a new version with specific parameters - continue with the new script.
 
-%save the script (generalPipeline.m)!!
+% DO SAVE the script (generalPipeline.m)!!. Do not do ctrl-S: 
+% *** you must click on the save button, otherwise this will not work. ***
 
 originalscript = which('generalPipeline');
 [a, b] = fileparts(originalscript);
@@ -64,26 +85,7 @@ copyfile(originalscript, scriptname)
 edit(scriptname)
 
 
-%% 1. do once, then skip: PP's preprocessing of axioscan images in ImageJ
-% 1. batch convert all the axioscans ito tiff in ImageJ, using the macro: 
-% batch_convert2tiff_highestResSeries_general.ijm.  Depending on how
-% your images were acquired, you may want to choose the highest resolution
-% series, or the second-highest one (there is a script for this too). 
-% For cell detection, I have had good results for cell detection starting 
-% from an image with 3.6 um per pixel.
-% -- avoid saturating the right tail of the histogram if you want to
-% detect stuff.
-
-
-%% 2. do once, then skip: split axioscans in single figures (one per slice)
-wait2confirmROI = 0;    % if true, you will need to double-click to confirm each ROI. If false, a cropped image is automatically saved.
-                        % wait2confirmROI = 0; is much faster -- IF you don't make mistakes!
-axioscanTiff_slideCropper(image_folder, image_tag, save_folder, microns_per_pixel, wait2confirmROI);
-
- 
 %% always run: filesystem and parameter definition - don't need to change
-% directory of single histology images
-image_folder = save_folder;
 
 % if the images are individual slices (as opposed to images of multiple
 % slices, which must be cropped using the cell CROP AND SAVE SLICES)
@@ -112,37 +114,32 @@ image_file_names = natsortfiles({image_file_names.name});
 % image_file_names = {'slide no 2_RGB.tif','slide no 3_RGB.tif','slide no 4_RGB.tif'}; % alternatively, list each image in order
 
 
-%% 3. do once, then skip: check all images for some to flip or adjust
-Process_Histology_1_PP; 
-%this will interactively allow you to crop, flip, rotate (and permute - untested) slices
+%% set and do once, then skip: tranform your full resolution image into a registration-ready image, keeping track of the transformation
+%set only the rotation to a standard coronal orientation:
+Transf.rotation = 90;  % specify angle (deg) 
+% positive angle is counterclockwise rotation. 
+% To rotate the image clockwise, specify a negative value for angle.
 
-% NOTE May 2021: No need to rotate, nor crop, unless you want to.
-% Just check every slice and flip if necessary.
-% this step can be quite fast if you don't dwell too much on rotations/cropping. 
+
+% nothing to set below:
+atlas_reference_size_um = microns_per_pixel_after_downsampling * atlas_reference_size;
+Transf.atlas_reference_size = atlas_reference_size; 
+Transf.reference_originalImage_RowCol_size = round(atlas_reference_size_um/microns_per_pixel);
+Transf.downsamplingFactor = microns_per_pixel/microns_per_pixel_after_downsampling;
+
+confocalTiff_slideDilater(image_folder, image_tag, save_folder, Transf); %save_folder is 'processed'
+
+%% now check for slice flipping and update transformation file
+slice_figure = figure('Name','Slice Viewer');
+SliceFlipper_PP_confocal(slice_figure, save_folder, atlas_reference_size, gain)  
+
 
 % IMPORTANT:
 % no furter manipulation should be done to the images after this stage.
 
-%% you will need to do cell detection on the *preprocessed* images.
-% step 1:
-% run  batch_split_invertColor_savePNG.ijm script in the 'preprocessed'
-% folder
-
-% step 2:
-% run cellprofiler pipeline
-
-%% 4. do once, then skip: downsample images for atlas registration (to the folder 'processed') - automatic and fast...
-% % consider closing the previous figure when you are done preprocessing:
-% close all
-folder_preprocessed_images = fullfile(save_folder, 'preprocessed');     
-Process_Histology_2_downsample_PP; %this will automatically downsample your *preprocessed* images and save them in the 'processed' folder for registration.
-disp('Downsampled and boosted images were saved in the processed folder')
-% This also increases the gain for better visualization during
-% registration. For some very dark images you may need to set a higher gain and
-% re-run this block.
 
 
-%% 5. Register each slice to the reference atlas
+%% Register each slice to the reference atlas
 set(0, 'DefaultFigureWindowStyle', 'docked')
 Navigate_Atlas_and_Register_Slices_PP;
 
@@ -150,6 +147,28 @@ Navigate_Atlas_and_Register_Slices_PP;
 T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
 
 
+
+
+%% cell detection and coordinate transformation -- to be finished
+
+% interpret file csv calculated on 'startingSingleSlices' images 
+celldetection_csvs = dir([input_folder filesep '*csv']);
+celldetection_csvs = natsortfiles({celldetection_csvs.name});
+
+for i = 1:length(celldetection_csvs)
+
+    T = readtable(fullfile(input_folder, celldetection_csvs{i})); %coordinates are in um
+    x = T.POSITION_X/microns_per_pixel; %in image coordinates
+    y = T.POSITION_Y/microns_per_pixel; %in image coordinates
+%     %check 
+%     im = imread(fullfile(image_folder, image_file_names{1}));
+%     figure;
+%     imshow(im.*20, []);  hold on
+%     scatter(x+1, y+1, 4, [1 0 0], 'filled');  %OK  
+end
+
+
+%reapply all the trasnformations
 
 
 
