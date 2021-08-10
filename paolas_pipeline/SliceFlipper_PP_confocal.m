@@ -97,13 +97,11 @@ switch lower(keydata.Key)
     case 'leftarrow' % save and previous slice
 %         imwrite(ud.current_slice_image, fullfile(folder_preprocessed_images, ud.processed_image_name))   
         fname = fullfile(folder_preprocessed_images, ud.processed_image_name);
-        imwrite(ud.current_slice_image(:,:,1), fname);
-        for i = 2:size(ud.current_slice_image, 3)
-            imwrite(ud.current_slice_image(:,:,i), fname, 'WriteMode', 'append');
-        end
         
-        ud.T.flipped(1,1) = ud.flipped;
-        ud.T.furtherRotation(1,1) = ud.rotate_angle;
+        imwrite(ud.current_slice_image, fname);
+        
+        ud.Transf.flipped(1,1) = ud.flipped;
+        ud.Transf.furtherRotation(1,1) = ud.rotate_angle;
         
         ud.slice_num = ud.slice_num - 1*(ud.slice_num>1);
         ud = load_next_slice(ud,folder_preprocessed_images);
@@ -111,13 +109,11 @@ switch lower(keydata.Key)
     case 'rightarrow' % save and next slice      
 %         imwrite(ud.current_slice_image, fullfile(folder_preprocessed_images, ud.processed_image_name))
         fname = fullfile(folder_preprocessed_images, ud.processed_image_name);
-        imwrite(ud.current_slice_image(:,:,1), fname);
-        for i = 2:size(ud.current_slice_image, 3)
-            imwrite(ud.current_slice_image(:,:,i), fname, 'WriteMode', 'append');
-        end
         
-        ud.T.flipped(1,1) = ud.flipped;
-        ud.T.furtherRotation(1,1) = ud.rotate_angle;
+        imwrite(ud.current_slice_image, fname);
+        
+        ud.Transf.flipped(1,1) = ud.flipped;
+        ud.Transf.furtherRotation(1,1) = ud.rotate_angle;
         
         ud.slice_num = ud.slice_num + 1*(ud.slice_num < length(ud.processed_image_names));
         ud = load_next_slice(ud,folder_preprocessed_images);
@@ -133,13 +129,11 @@ switch lower(keydata.Key)
     
     case 'n' %save and go to slice num...
         fname = fullfile(folder_preprocessed_images, ud.processed_image_name);
-        imwrite(ud.current_slice_image(:,:,1), fname);
-        for i = 2:size(ud.current_slice_image, 3)
-            imwrite(ud.current_slice_image(:,:,i), fname, 'WriteMode', 'append');
-        end
         
-        ud.T.flipped(1,1) = ud.flipped;
-        ud.T.furtherRotation(1,1) = ud.rotate_angle;
+        imwrite(ud.current_slice_image, fname);
+        
+        ud.Transf.flipped(1,1) = ud.flipped;
+        ud.Transf.furtherRotation(1,1) = ud.rotate_angle;
         
         
         ud.slice_num = input('Go to slice num: ');
@@ -252,8 +246,8 @@ switch lower(keydata.Key)
         ud.original_ish_slice_image = ud.original_slice_image;
         ud.size = size(ud.current_slice_image); 
         ud.grid = imresize(ud.grid, ud.size(1:2)); 
-        ud.rotate_angle = ud.T.furtherRotation(1,1);
-        ud.flipped = ud.T.flipped(1,1);
+        ud.rotate_angle = ud.Transf.furtherRotation(1,1);
+        ud.flipped = ud.Transf.flipped(1,1);
 
 end
 
@@ -290,11 +284,11 @@ function ud = load_next_slice(ud,folder_processed_images)
     
     % also load the transformations
     fname_transf = ud.processed_transf_names{ud.slice_num};
-    ud.T = matfile(fullfile(folder_processed_images,fname_transf),'Writable',true);
+    ud.Transf = matfile(fullfile(folder_processed_images,fname_transf),'Writable',true);
     
     ud.current_slice_image = A;
-    ud.rotate_angle = ud.T.furtherRotation(1,1);
-    ud.flipped = ud.T.flipped(1,1);
+    ud.rotate_angle = ud.Transf.furtherRotation(1,1);
+    ud.flipped = ud.Transf.flipped(1,1);
     
     disp(['loaded ' ud.processed_image_name])
     
@@ -326,10 +320,9 @@ function ud = load_next_slice(ud,folder_processed_images)
     
 %     imwrite(ud.current_slice_image, fullfile(folder_processed_images, ud.processed_image_name)) 
     fname = fullfile(folder_processed_images, ud.processed_image_name);
-    imwrite(ud.current_slice_image(:,:,1), fname);
-    for i = 2:size(ud.current_slice_image, 3)
-        imwrite(ud.current_slice_image(:,:,i), fname, 'WriteMode', 'append');
-    end
+    
+    imwrite(ud.current_slice_image, fname);
+
 
 
 % % function to rotate slice by scrolling

@@ -3,7 +3,7 @@ function confocalTiff_slideDilater(image_folder, image_tag, save_folder, Transf)
 if ~exist(save_folder, 'dir')
     mkdir(save_folder)
 end
-file_name_suffix = '_processed';
+file_name_suffix = '_preprocessed';
 
 %% transf settings
 % T.rotation = 90;

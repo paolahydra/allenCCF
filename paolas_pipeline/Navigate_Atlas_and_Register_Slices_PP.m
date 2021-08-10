@@ -6,7 +6,7 @@
 %% ENTER FILE LOCATION AND PROBE-SAVE-NAME
 % directory of histology
 if ~exist('folder_processed_images','var')
-    folder_processed_images = fullfile(save_folder, 'processed');
+    folder_processed_images = fullfile(image_folder, 'processed');
 end
 
 % name the saved probe points, to avoid overwriting another set of probes going in the same folder
