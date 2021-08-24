@@ -8,6 +8,12 @@ transf_atlasreg_folder  = fullfile(input_folder, 'startingSingleSlices/processed
 k = strfind(image_file_names{1}, image_tag);
 assert(~isempty(k), 'check for image filename root (image_tag variable)')
 [~,filename,~] = fileparts(image_file_names{1});
+
+if contains(filename, '_preprocessed')
+    i_delete = strfind(filename, '_preprocessed');
+    filename(i_delete:end) = [];
+end
+
 image_var_pos_i = length(image_tag)+k : length(filename); %indices in image_file_names
 % image_file_names{1}(image_var_pos_i)
 
@@ -166,6 +172,7 @@ for i = 1:length(image_file_names)
         if countIM == 1
             %         writetable(roi_table, roiTable_name, 'WriteVariableNames', true, 'WriteMode', 'overwrite') %only available matlab 2021
             writetable(roi_table, roiTable_name, 'WriteVariableNames', true)
+            T_roi = roi_table;
         else
             T_roi = readtable(roiTable_name);
             T_roi = cat(1, T_roi, roi_table);

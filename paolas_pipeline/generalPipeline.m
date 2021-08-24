@@ -141,15 +141,6 @@ SliceFlipper_PP_confocal(slice_figure, save_folder, atlas_reference_size, gain)
 % IMPORTANT:
 % no furter manipulation should be done to the images after this stage.
 
-%% PAOLA: check that this is done after closing the figure, not before...
-% % this needs to be consolidated. Is it necessary to duplicate the folder?
-% % populate the processed folder for atlas registration
-% image_file_names = dir([save_folder filesep '*.tif']); % get the contents of the image_folder
-% image_file_names = natsortfiles({image_file_names.name});
-% for f = 1: length(image_file_names)
-%     fname = fullfile(save_folder, image_file_names{f});
-%     [status, msg, msgID] = copyfile(fname, folder_processed_images);
-% end
 
 
 %% Register each slice to the reference atlas
