@@ -20,20 +20,18 @@
 
 
 
-%% TO DO _ PAOLA:
-% 1. read in the actual images, not the downsampled, single channel one.
-% 2. make user that all the steps know how to handle multi-channel stacked
-% images - step 4 (processed downsampling does not right now)
-% 
-% 
-
-
 %%  always run: general settings (set once)
-addpath(genpath('/Users/galileo/GitHub/allenCCF'))
-% addpath(genpath('C:\GitHub\allenCCF')) %clone the repository from : https://github.com/paolahydra/allenCCF/tree/sliceRegistration and change path here
 
-pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+% addpath(genpath('C:\GitHub\allenCCF')) %clone the repository from : https://github.com/paolahydra/allenCCF/tree/sliceRegistration_confocal     
+addpath(genpath('/Users/galileo/GitHub/allenCCF'))
+
+addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas'))
 % pathToAtlas = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\';
+pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+
+
+
+
 annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_index.npy');
 structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
 template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
@@ -68,10 +66,16 @@ save_folder = fullfile(image_folder, 'processed');
 if ~exist(save_folder, 'dir')
     mkdir(save_folder);
 end
+% folder_processed_images = fullfile(image_folder, 'processed');
+% if ~exist(folder_processed_images, 'dir')
+%     mkdir(folder_processed_images);
+% end
 
 %% do once, then skip: move your MAX_ full resolution images in the startingSingleSlices folder 
 % (which was just created inside your main folder)
 
+% first you need to run the imageJ script:
+% GitHub/imageJ_batchProcessing/tiffs/batch_maxProjection_saturation_8bit.ijm
 
 %% do once, then skip: save the script and then create a new version with specific parameters - continue with the new script.
 
@@ -137,10 +141,20 @@ SliceFlipper_PP_confocal(slice_figure, save_folder, atlas_reference_size, gain)
 % IMPORTANT:
 % no furter manipulation should be done to the images after this stage.
 
+%% PAOLA: check that this is done after closing the figure, not before...
+% % this needs to be consolidated. Is it necessary to duplicate the folder?
+% % populate the processed folder for atlas registration
+% image_file_names = dir([save_folder filesep '*.tif']); % get the contents of the image_folder
+% image_file_names = natsortfiles({image_file_names.name});
+% for f = 1: length(image_file_names)
+%     fname = fullfile(save_folder, image_file_names{f});
+%     [status, msg, msgID] = copyfile(fname, folder_processed_images);
+% end
 
 
 %% Register each slice to the reference atlas
 set(0, 'DefaultFigureWindowStyle', 'docked')
+folder_processed_images = save_folder; %legacy
 Navigate_Atlas_and_Register_Slices_PP;
 
 
@@ -150,32 +164,10 @@ T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), ima
 
 
 
-%% cell detection and coordinate transformation -- to be finished
-
-% interpret file csv calculated on 'startingSingleSlices' images 
-celldetection_csvs = dir([input_folder filesep '*csv']);
-celldetection_csvs = natsortfiles({celldetection_csvs.name});
-
-for i = 1:length(celldetection_csvs)
-
-    T = readtable(fullfile(input_folder, celldetection_csvs{i})); %coordinates are in um
-    x = T.POSITION_X/microns_per_pixel; %in image coordinates
-    y = T.POSITION_Y/microns_per_pixel; %in image coordinates
-%     %check 
-%     im = imread(fullfile(image_folder, image_file_names{1}));
-%     figure;
-%     imshow(im.*20, []);  hold on
-%     scatter(x+1, y+1, 4, [1 0 0], 'filled');  %OK  
-end
-
-
-%reapply all the trasnformations
-
-
-
 %% 6. do once: when finished with the registr to atlas, do this to register and tabulate the detected cells too.
 object_tag = 'green'; 
-tabulateData;
+tabulateData_confocal;
+
 
 %% plot?
 braincolor = 'g';

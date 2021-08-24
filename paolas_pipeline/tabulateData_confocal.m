@@ -13,4 +13,4 @@ if ~exist('tv','var')
 %     tv_plot = tv; %for coronal slices
 end
 
-T_roi = Register_and_Tabulate_Rois(object_tag, save_folder, image_tag, av, st, tv, microns_per_pixel, microns_per_pixel_after_downsampling, reference_size);
+T_roi = Register_and_Tabulate_Rois_confocal(object_tag, image_tag, input_folder, image_file_names, av, st, tv, microns_per_pixel, reference_size);
