@@ -8,12 +8,10 @@ transf_atlasreg_folder  = fullfile(input_folder, 'startingSingleSlices/processed
 k = strfind(image_file_names{1}, image_tag);
 assert(~isempty(k), 'check for image filename root (image_tag variable)')
 [~,filename,~] = fileparts(image_file_names{1});
-
 if contains(filename, '_preprocessed')
     i_delete = strfind(filename, '_preprocessed');
     filename(i_delete:end) = [];
 end
-
 image_var_pos_i = length(image_tag)+k : length(filename); %indices in image_file_names
 % image_file_names{1}(image_var_pos_i)
 
@@ -50,13 +48,18 @@ for i = 1:length(image_file_names)
         fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
         fileroot = fileroot{1};
         
-        %% read the csv file in
-        TC = readtable(csv_file); %coordinates are in um
-        x = TC.POSITION_X/microns_per_pixel; %in image coordinates
-        y = TC.POSITION_Y/microns_per_pixel; %in image coordinates
         
         %% read the preprocessing transformations in
         T1 = load(transf_file_prepr);
+        %% read the csv file in
+        TC = readtable(csv_file); %coordinates are in um
+        x = TC.xGlobal/microns_per_pixel; %in image coordinates
+        y = TC.yGlobal/microns_per_pixel; %in image coordinates
+
+        %% Kevin: you need to flip the x axis of your coordinates - this needs to be made more robust
+        warning('check the output to see if the coordinates need flipping about a specific axis')
+%         x = T1.originalImage_RowCol_size(2) - x;
+        
         
         %% read and parse the atlas transformation
         trmat = load(transf_file_atlas); %save_transform
@@ -77,7 +80,7 @@ for i = 1:length(image_file_names)
         bregma = allenCCFbregma(); % bregma position in reference data space
         atlas_resolution = 0.010; % mm
         offset_map = get_offset_map(slice_angle, reference_size);
-        
+         
         %% for each detected cell, make an image and reapply all the transformations, store new xy coords
         
         im0 = false(T1.originalImage_RowCol_size);
@@ -121,7 +124,7 @@ for i = 1:length(image_file_names)
                 J = imrotate(J,T1.furtherRotation,'nearest','crop'); %check that it works reliably
             end
             
-            
+
             %% reapply the atlas reg transformations
             
             curr_slice_trans = imwarp(J, transform_data.transform, 'OutputView',R);
@@ -164,9 +167,9 @@ for i = 1:length(image_file_names)
         end
         toc
         
-        filename_origin = repmat({sprintf('%s', fileroot)}, length(x), 1);
+        filename_origin = repmat(fileroot, length(x), 1);
         roi_table = table(roi_annotation(:,2),roi_annotation(:,3), ...
-            roi_location(:,1),roi_location(:,2),roi_location(:,3), cat(1, roi_annotation{:,1}), filename_origin, ...
+            roi_location(:,1),roi_location(:,2),roi_location(:,3), cat(1, roi_annotation{:,1}), cellstr(filename_origin), ...
             'VariableNames', {'name', 'acronym', 'AP_location', 'DV_location', 'ML_location', 'avIndex', 'roiFIle'});
         
         if countIM == 1
@@ -179,7 +182,11 @@ for i = 1:length(image_file_names)
             writetable(T_roi, roiTable_name, 'WriteVariableNames', true)
             %         writetable(roi_table, roiTable_name, 'WriteVariableNames', false, 'WriteMode', 'append') %only available matlab 2021
         end
-        
-        
+        % check output 
+        transfImage = imread(fullfile(transf_atlasreg_folder, sprintf('%s_preprocessed_transformed.tif',fileroot)));
+        figure; hold on
+        imshow(transfImage, []); title(fileroot, 'Interpreter', 'none')
+        scatter(pixels_column, pixels_row, 20, 'g','filled')
+        savefig(fullfile(folder_processed_images, sprintf('%s_registeredCells',fileroot)))
     end
 end
