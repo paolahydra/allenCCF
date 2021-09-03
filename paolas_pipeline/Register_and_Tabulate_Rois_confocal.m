@@ -47,7 +47,7 @@ for i = 1:length(image_file_names)
         transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{contains(transfs, vartag)});
         csv_file = fullfile(input_folder, celldetection_csvs{contains(celldetection_csvs, vartag)});
         
-        fileroot = regexp('MAX_Rabies_Cerv_uni_1_slide3b_Region-1_nTiles-058_1_preprocessed_transform_data.mat', '_preprocessed_transform_data.mat', 'split');
+        fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
         fileroot = fileroot{1};
         
         %% read the csv file in
