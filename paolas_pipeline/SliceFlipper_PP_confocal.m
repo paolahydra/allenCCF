@@ -37,12 +37,13 @@ elseif size(ud.current_slice_image,1)>1500
     end
 end
 
-if size(ud.current_slice_image*ud.gain,3) > 3
+if size(ud.current_slice_image,3) > 3
     figure
     for ch_id = 1:4
         subplot(2,2,ch_id), hold on
         title(sprintf('channel %d', ch_id))
-        imshow(ud.current_slice_image(:,:,ch_id)*ud.gain);
+        
+        imshow(uint8(double(ud.current_slice_image(:,:,ch_id)).*ud.gain));
     end
     answer = inputdlg('Please indicate max 3 channels to keep (e.g.: 1:3, or 1 2 4):');
     if contains(answer, ':')
@@ -56,7 +57,8 @@ if size(ud.current_slice_image*ud.gain,3) > 3
 else
     image2show = ud.current_slice_image;
 end
-imshow(image2show*ud.gain + ud.grid)
+image2show = uint8(double(image2show).*ud.gain + double(ud.grid));
+imshow(image2show)
 title(['Slice ' num2str(ud.slice_num) ' / ' num2str(ud.total_num_files)])
 set(slice_figure, 'UserData', ud);
 
@@ -254,13 +256,14 @@ end
 
 
 % in all cases, update image and title
-if size(ud.current_slice_image*ud.gain,3) > 3
+if size(ud.current_slice_image,3) > 3
     image2show = ud.current_slice_image(:,:,ud.channels2Keep);
     ud.grid = ud.grid(:,:,1:length(ud.channels2Keep));
 else
     image2show = ud.current_slice_image;
 end
-imshow(image2show*ud.gain + ud.grid)
+image2show = uint8(double(image2show).*ud.gain + double(ud.grid));
+imshow(image2show)
 title(['Slice ' num2str(ud.slice_num) ' / ' num2str(ud.total_num_files)])
 
 
