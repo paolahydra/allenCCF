@@ -43,16 +43,30 @@ for f = 1:length(image_file_names)
     J = imrotate(hist_image, Transf.rotation);
 
     %% do the dilating - we asume that the confocal image will always be smaller than the reference size, which will always be true unless wrong parameters
-    assert(Transf.reference_originalImage_RowCol_size(1) > size(J, 1) && Transf.reference_originalImage_RowCol_size(2) > size(J, 2), 'check you pixel size!')
+    if ( Transf.reference_originalImage_RowCol_size(1) < size(J, 1) || Transf.reference_originalImage_RowCol_size(2) < size(J, 2) )
+        % first crop the image to the reference dimension
+        
+        % the following assumes that the amount to be cropped is small and that the
+        % ROI is fairly centered within the image.
+        
+        cropSize_rows =    max([0, ceil( -1*(Transf.reference_originalImage_RowCol_size(1) - size(J,1)) /2 )]);
+        cropSize_columns = max([0, ceil( -1*(Transf.reference_originalImage_RowCol_size(2) - size(J,2)) /2 )]);
+        J(1:cropSize_rows, :, :) = [];
+        J(end-cropSize_rows+1:end, :, :) = [];
+        J(:,1:cropSize_columns, :) = [];
+        J(:,end-cropSize_columns+1:end, :) = [];
+    end
+    % now dilate it if needed
+    % you need to dilate the image to the reference size
     % atlas_reference_size_um = microns_per_pixel_after_downsampling * atlas_reference_size;
     % T.reference_size_image = round(atlas_reference_size_um/microns_per_pixel);
     
     padSize_rows =    ceil( (Transf.reference_originalImage_RowCol_size(1) - size(J,1)) /2 );
     padSize_columns = ceil( (Transf.reference_originalImage_RowCol_size(2) - size(J,2)) /2 );
-
+    
     J = padarray(J, [padSize_rows padSize_columns], 0);
-        
-    % now crop the excess out
+    
+    % finally crop any excess out
     J = J(1:Transf.reference_originalImage_RowCol_size(1), 1:Transf.reference_originalImage_RowCol_size(2), :);
     
 %     figure; 
