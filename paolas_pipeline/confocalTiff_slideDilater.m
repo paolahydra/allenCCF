@@ -42,7 +42,7 @@ for f = 1:length(image_file_names)
     %% rotate to standard coronal orientation (coordinate change!)
     J = imrotate(hist_image, Transf.rotation);
 
-    %% do the dilating - we asume that the confocal image will always be smaller than the reference size, which will always be true unless wrong parameters
+    %% do the dilating (if the acquisition window was too large, crop it out first - this assumes ROI is fairly centered)
     if ( Transf.reference_originalImage_RowCol_size(1) < size(J, 1) || Transf.reference_originalImage_RowCol_size(2) < size(J, 2) )
         % first crop the image to the reference dimension
         

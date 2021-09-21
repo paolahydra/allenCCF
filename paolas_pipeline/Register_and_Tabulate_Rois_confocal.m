@@ -53,8 +53,8 @@ for i = 1:length(image_file_names)
         T1 = load(transf_file_prepr);
         %% read the csv file in
         TC = readtable(csv_file); %coordinates are in um
-        x = TC.xGlobal/microns_per_pixel; %in image coordinates
-        y = TC.yGlobal/microns_per_pixel; %in image coordinates
+        x = TC.POSITION_X/microns_per_pixel; %in image coordinates
+        y = TC.POSITION_Y/microns_per_pixel; %in image coordinates
 
         %% Kevin: you need to flip the x axis of your coordinates - this needs to be made more robust
         warning('check the output to see if the coordinates need flipping about a specific axis')
@@ -103,13 +103,32 @@ for i = 1:length(image_file_names)
             % rotate to standard coronal orientation (coordinate change!)
             J = imrotate(IM, T1.rotation);
             
-            % do the dilating
+            % do the cropping/dilating
+            if ( T1.reference_originalImage_RowCol_size(1) < size(J, 1) || T1.reference_originalImage_RowCol_size(2) < size(J, 2) )
+                % first crop the image to the reference dimension
+                
+                % the following assumes that the amount to be cropped is small and that the
+                % ROI is fairly centered within the image.
+                
+                cropSize_rows =    max([0, ceil( -1*(T1.reference_originalImage_RowCol_size(1) - size(J,1)) /2 )]);
+                cropSize_columns = max([0, ceil( -1*(T1.reference_originalImage_RowCol_size(2) - size(J,2)) /2 )]);
+                J(1:cropSize_rows, :, :) = [];
+                J(end-cropSize_rows+1:end, :, :) = [];
+                J(:,1:cropSize_columns, :) = [];
+                J(:,end-cropSize_columns+1:end, :) = [];
+            end
+            % now dilate it if needed
+            % you need to dilate the image to the reference size
+            % atlas_reference_size_um = microns_per_pixel_after_downsampling * atlas_reference_size;
+            % T.reference_size_image = round(atlas_reference_size_um/microns_per_pixel);
+            
             padSize_rows =    ceil( (T1.reference_originalImage_RowCol_size(1) - size(J,1)) /2 );
-            padSize_columns = ceil( (T1.reference_originalImage_RowCol_size(2) - size(J,2)) /2 );
+            padSize_columns = ceil( (T1.reference_originalImage_RowCol_size(2) - size(J,2)) /2 ); 
             J = padarray(J, [padSize_rows padSize_columns], 0);
             
-            % now crop the excess out
+            % finally crop any excess out
             J = J(1:T1.reference_originalImage_RowCol_size(1), 1:T1.reference_originalImage_RowCol_size(2), :);
+
             
             % downsample
             J = imresize(J, [round(T1.reference_originalImage_RowCol_size(1) * T1.downsamplingFactor)  NaN]);
@@ -184,8 +203,9 @@ for i = 1:length(image_file_names)
         end
         % check output 
         transfImage = imread(fullfile(transf_atlasreg_folder, sprintf('%s_preprocessed_transformed.tif',fileroot)));
-        figure; hold on
-        imshow(transfImage, []); title(fileroot, 'Interpreter', 'none')
+        figure; 
+        imshow(transfImage, []); title(fileroot, 'Interpreter', 'none');
+        hold on
         scatter(pixels_column, pixels_row, 20, 'g','filled')
         savefig(fullfile(folder_processed_images, sprintf('%s_registeredCells',fileroot)))
     end
