@@ -28,14 +28,17 @@ for f = 1:length(image_file_names)
     %PAOLA: for now only use the first three channels. Later add the
     %possibility to choose
     clear hist_image
-    for ch = 1:min([3, nChannels])  % only use the first three channels (as the last one is often empty/noisy)
-        hist_image(:,:,ch) = imread(fullfile(image_folder, image_file_names{f}), 'tif', ch); %this is the original image. Quality will be preserved.
+    if nChannels == 1
+        hist_image = imread(fullfile(image_folder, image_file_names{f}), 'tif');
+    else
+        for ch = 1:min([3, nChannels])  % only use the first three channels (as the last one is often empty/noisy)
+            hist_image(:,:,ch) = imread(fullfile(image_folder, image_file_names{f}), 'tif', ch); %this is the original image. Quality will be preserved.
+        end
+        if nChannels==2
+            % add an extra channel to make an RGB image
+            hist_image(:,:,3) = zeros(size(hist_image(:,:,1)));
+        end
     end
-    if nChannels==2
-        % add an extra channel to make an RGB image
-        hist_image(:,:,3) = zeros(size(hist_image(:,:,1)));
-    end
-
     % save some useful info for coordinate retrieval
     Transf.originalImage_RowCol_size = [INFO(1).Height, INFO(1).Width];
     
