@@ -208,5 +208,8 @@ for i = 1:length(image_file_names)
         hold on
         scatter(pixels_column, pixels_row, 20, 'g','filled')
         savefig(fullfile(folder_processed_images, sprintf('%s_registeredCells',fileroot)))
+    elseif sum(contains(transfs, vartag))>1 || sum(contains(celldetection_csvs, vartag))>1
+        error('Your file naming system seems ambiguous. Make sure the variable part contains the same number of digits/letters.')
+    end
     end
 end

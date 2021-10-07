@@ -6,6 +6,13 @@ function sliceBrowser(slice_figure, processed_images_folder, f, reference_size)
 % initialize user data variables held by the figure
 processed_images = dir([processed_images_folder filesep '*.tif']);
 ud_slice.processed_image_names = natsortfiles({processed_images.name});
+% %temp ----------------------
+% load('\\tungsten-nas.fmi.ch\scratch\garber\Chiara\SpinningDisk_2021\210729\FinalOutput_Rabies_Cerv_uni_1\key_MAX_Rabies_Cerv_uni_1_.mat')
+% for n = 1:length(ud_slice.processed_image_names)    
+%     resorting.processed_image_names(orderKey(n)) = ud_slice.processed_image_names(n);  
+% end
+% ud_slice.processed_image_names = resorting.processed_image_names;
+% %temp ----------------------
 total_num_files = size(processed_images,1); disp(['found ' num2str(total_num_files) ' processed slice images']);
 ud_slice.total_num_files = total_num_files;
 ud_slice.break = 0; 
