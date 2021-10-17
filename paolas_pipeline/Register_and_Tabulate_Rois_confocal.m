@@ -47,7 +47,7 @@ for i = 1:length(image_file_names)
         
         fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
         fileroot = fileroot{1};
-        
+        fprintf('registering file:\n  %s\n', csv_file )
         
         %% read the preprocessing transformations in
         T1 = load(transf_file_prepr);
@@ -84,7 +84,7 @@ for i = 1:length(image_file_names)
         %% for each detected cell, make an image and reapply all the transformations, store new xy coords
         
         im0 = false(T1.originalImage_RowCol_size);
-        dilateF = 5;
+        dilateF = 10; %if too small it sometimes disappear during transformations. If too big I am afraid it might become less precise, but I am not sure about this.
         roi_location = zeros(length(x),3);
         roi_annotation = cell(length(x),3);
 
@@ -92,6 +92,7 @@ for i = 1:length(image_file_names)
         pixels_column = nan(length(x),1);
         
         tic
+        disp('    reapplying transformations to the detected cells...')
         parfor p_i = 1:length(x)
 %              disp(p_i)
             X = round(x(p_i));
@@ -147,7 +148,10 @@ for i = 1:length(image_file_names)
             %% reapply the atlas reg transformations
             
             curr_slice_trans = imwarp(J, transform_data.transform, 'OutputView',R);
-            
+            if sum(curr_slice_trans(:))==0
+                fprintf('cell #%d is being wrongly assigned to the center of the image. Increase dilateF', p_i)
+                error('Some ROIs are not correctly transformed. Increase the value assigned to dilateF.' )
+            end
             rois = uint8(imregionalmax(curr_slice_trans));
             
             [p_row, p_column] = find(rois>0);
@@ -159,6 +163,7 @@ for i = 1:length(image_file_names)
         toc
         
         tic
+        disp('    annotating transformed cells...') 
         % loop again through cells (this is faster outside of parloop)
         for p_i = 1:length(x)
             p_row = pixels_row(p_i);
@@ -186,6 +191,7 @@ for i = 1:length(image_file_names)
         end
         toc
         
+        disp('    saving results in ...roiTable_All.csv...')
         filename_origin = repmat(fileroot, length(x), 1);
         roi_table = table(roi_annotation(:,2),roi_annotation(:,3), ...
             roi_location(:,1),roi_location(:,2),roi_location(:,3), cat(1, roi_annotation{:,1}), cellstr(filename_origin), ...
