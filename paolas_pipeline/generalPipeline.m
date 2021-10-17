@@ -20,14 +20,18 @@
 
 
 %%  always run: general settings (set once)
-addpath(genpath('C:\GitHub\allenCCF')) %clone the repository from : https://github.com/paolahydra/allenCCF/tree/sliceRegistration and change path here
-addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')); %check this directory
+addpath(genpath('/Users/galileo/GitHub/allenCCF'))
+addpath(genpath('/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/npy-matlab-master/npy-matlab'))
+pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
 
-% set path to the reference atlas files 
-annotation_volume_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\annotation_volume_10um_by_index.npy';
-structure_tree_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\structure_tree_safe_2017.csv';
-template_volume_location = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\template_volume_10um.npy';
+% addpath(genpath('C:\GitHub\allenCCF')) %clone the repository from : https://github.com/paolahydra/allenCCF/tree/sliceRegistration_confocal     
+% addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas'))
+% pathToAtlas = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\';
 
+
+annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_index.npy');
+structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
+template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
 
 % other stable settings:
 % plane to view ('coronal', 'sagittal', 'transverse')
@@ -38,12 +42,12 @@ transformationType = 'pwl';     %use 'projective', or 'pwl' (piece-wise linear: 
 
 %%  set once, then always run: specify paths and settings for the specific brain to register
 % move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = '/Users/galileo/dati/registered_brains_completed/992234';   %change this
-image_tag = 'mouse_992234_';                                               %change this - use an unequivocal tag for your experiment
-microns_per_pixel = 3.8852; %take this value from your tiff filename
+image_folder = '/Users/galileo/dati/registered_brains_completed/ephys_probeLoc/1031707';   %change this
+image_tag = 'mouse_1031707_';                                               %change this - use an unequivocal tag for your experiment
+microns_per_pixel = 5.1803; %3.4536; %3.8852; %take this value from your tiff filename
 
 % increase gain if for some reason the images are not bright enough
-gain = 5;   % for visualization only: during cropping or atlas alignment
+gain = 3;   % for visualization only: during cropping or atlas alignment
 
 if ~strcmp( image_tag(end), '_')
     image_tag = cat(2, image_tag, '_');
@@ -157,7 +161,8 @@ T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), ima
 object_tag = 'green'; 
 tabulateData;
 
-%% plot?
+
+%% demo: plot all detected cells in the 3D model
 braincolor = 'g';
 fwireframe = [];
 black_brain = false;

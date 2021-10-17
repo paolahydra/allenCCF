@@ -30,6 +30,9 @@ if ~use_already_downsampled_image
         original_image_size = size(image);
         image = imresize(image, [round(original_image_size(1)*microns_per_pixel/microns_per_pixel_after_downsampling)  NaN]);
         image = image*gain;
+        if size(image,3) == 2
+            image = cat(3, image, zeros(size(image(:,:,1))));
+        end
         
         % to visualiye RGB
         image = image(:,:,1:3);

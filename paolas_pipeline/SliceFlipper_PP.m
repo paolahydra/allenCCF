@@ -268,19 +268,44 @@ function ud = load_next_slice(ud,folder_processed_images)
     fname = fullfile(folder_processed_images, ud.processed_image_name);
     INFO = imfinfo(fname);
     nChannels = length(INFO);
-    clear A
-    for ch = 1:nChannels  
-        A(:,:,ch) = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
-%         A(ch).image = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
-    end
-%     figure
-%     for ch_id = 1:nChannels
-%         subplot(2,2,ch_id), hold on
-%         title(sprintf('channel %d', ch_id))
-%         imshow(A(ch_id).image*ud.gain);
-%     end
     
-    ud.current_slice_image = A;
+    
+%     clear A
+%     for ch = 1:nChannels  
+%         A(:,:,ch) = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
+% %         A(ch).image = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
+%     end
+% %     figure
+% %     for ch_id = 1:nChannels
+% %         subplot(2,2,ch_id), hold on
+% %         title(sprintf('channel %d', ch_id))
+% %         imshow(A(ch_id).image*ud.gain);
+% %     end
+%     ud.current_slice_image = A;
+    
+    
+    
+   
+    
+    %PAOLA: for now only use the first three channels. Later add the
+    %possibility to choose
+    clear hist_image
+    if nChannels == 1
+        hist_image = imread(fname, 'tif');
+    else
+        for ch = 1:min([3, nChannels])  % only use the first three channels (as the last one is often empty/noisy)
+            hist_image(:,:,ch) = imread(fname, 'tif', ch); %this is the original image. Quality will be preserved.
+        end
+        if nChannels==2
+            % add an extra channel to make an RGB image
+            hist_image(:,:,3) = zeros(size(hist_image(:,:,1)));
+        end
+    end
+    ud.current_slice_image = hist_image;
+    
+    
+    
+    
     
     disp(['loaded ' ud.processed_image_name])
     

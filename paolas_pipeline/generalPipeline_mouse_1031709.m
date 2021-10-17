@@ -179,12 +179,15 @@ edit Display_Probe_Track.m
 
 
 %% load cells (retro_fromMed in github)
-folders2Include = uipickfiles('FilterSpec', '/Users/galileo/dati/registered_brains_completed');
+folders2Include={'/Users/galileo/dati/registered_brains_completed/992234', ...
+                '/Users/galileo/dati/registered_brains_completed/993030',  ...
+                '/Users/galileo/dati/registered_brains_completed/993031'};
 plotFWire = 0;
 object_tag = 'green'; %'green' for rabies cells
 S = loadTabDataFromMultipleBrains(folders2Include, plotFWire, object_tag); %updated plotting to exclude point that are in 'root' (avIndex = 1)
 
 %% define and add the cells!
+clear p
 SNR = 823;
 SNC = 867;
 bregma = allenCCFbregma();
@@ -201,23 +204,23 @@ for i = 1:length(S)
     
     % transform coordinates
     ap_pixel = bregma(1) - S(i).T_roi.AP_location(S(i).pltIdx)./atlas_resolution; %OK
-    ml_pixel = bregma(3) + S(i).T_roi.ML_location(S(i).pltIdx)./atlas_resolution; %OK
+    ml_pixel = bregma(3) - S(i).T_roi.ML_location(S(i).pltIdx)./atlas_resolution; %OK
     dv_pixel = bregma(2) + S(i).T_roi.DV_location(S(i).pltIdx)./atlas_resolution; %OK
     
     p(i) = plot3(ap_pixel, ml_pixel, dv_pixel, '.','linewidth',2, 'color', S(3).braincolor, 'markers',7);
     
 end
-
+%%
 makeVideo = 1;
 if makeVideo   
     F = -29.2;
     view([F, 17])
     drawnow;
-    export_fig('mouse_1031709_SNR_SNC_cells_probes.png', '-nocrop', '-png', '-m5')
+    export_fig('mouse_1031707_SNR_SNC_cells_probes.png', '-nocrop', '-png', '-m5')
     
     %%
 
-    WriterObj = VideoWriter('mouse_1031709_SNR_SNC_NOcells_probes.mp4', 'MPEG-4');
+    WriterObj = VideoWriter('mouse_1031707_SNR_SNC_NOcells_probes.mp4', 'MPEG-4');
     WriterObj.FrameRate=30;
     open(WriterObj);
     for f = -30:329

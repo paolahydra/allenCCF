@@ -236,9 +236,13 @@ fD.InvertHardcopy = 'off';
 
 yyaxis right
 if active_site_start> 0
-    set(gca, 'YTick', [1 active_site_start*10 rpl*10 yc(end)+(1-probage_past_tip_to_plot)*100], 'YTickLabel', {'0 ' [num2str(active_site_start*10) ' '] [num2str(rpl*10) ' '] [num2str(yc(end)+(1-probage_past_tip_to_plot)*100) ' ']});
+    YTicks = [1 active_site_start*10 rpl*10 yc(end)+(1-probage_past_tip_to_plot)*100];
+    YTickLabels = {'0 ' [num2str(round(active_site_start)*10) ' '] [num2str(round(rpl)*10) ' '] [num2str(yc(end)+(1-probage_past_tip_to_plot)*100) ' ']};
+    set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
 else
-    set(gca, 'YTick', [1 rpl*10 yc(end)+(1-probage_past_tip_to_plot)*100], 'YTickLabel', {'0' [num2str(rpl*10) ' '] [num2str(yc(end)+(1-probage_past_tip_to_plot)*100) ' ']});
+    YTicks = [1 rpl*10 yc(end)+(1-probage_past_tip_to_plot)*100];
+    YTickLabels = {'0' [num2str(rpl*10) ' '] [num2str(yc(end)+(1-probage_past_tip_to_plot)*100) ' ']};
+    set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
 end
 set(gca, 'YDir','reverse');
 set(gca,'YColor',[1 1 1]*.2)
@@ -248,5 +252,44 @@ ylim([1 yc(end)+1])
 plot([0 100], [(active_site_start*10) (active_site_start*10)], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',3);
 plot([0 100], [(rpl)*10 (rpl)*10], 'color', [.1 .1 .1], 'LineStyle',':', 'linewidth',3);
 
+yPRE_i = 1;
+yPRE = (active_site_start - (rpl-active_site_start)*yPRE_i );
+plot([0 100], [yPRE*10 yPRE*10], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',2);
+yPRE_i = yPRE_i+1;
+YTicks = cat(2, YTicks, yPRE*10);
+YTickLabels = cat(2, YTickLabels,  {[num2str(round(yPRE)*10) ' '] });
+[YTicks, b] = sort(YTicks);
+YTickLabels = YTickLabels(b);
+set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
+
+yPRE = (active_site_start - (rpl-active_site_start)*yPRE_i );
+plot([0 100], [yPRE*10 yPRE*10], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',2);
+yPRE_i = yPRE_i+1;
+YTicks = cat(2, YTicks, yPRE*10);
+YTickLabels = cat(2, YTickLabels,  {[num2str(round(yPRE)*10) ' '] });
+[YTicks, b] = sort(YTicks);
+YTickLabels = YTickLabels(b);
+set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
+
+yPRE = (active_site_start - (rpl-active_site_start)*yPRE_i );
+plot([0 100], [yPRE*10 yPRE*10], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',2);
+yPRE_i = yPRE_i+1;
+YTicks = cat(2, YTicks, yPRE*10);
+YTickLabels = cat(2, YTickLabels,  {[num2str(round(yPRE)*10) ' '] });
+[YTicks, b] = sort(YTicks);
+YTickLabels = YTickLabels(b);
+set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
+
+yPRE = (active_site_start - (rpl-active_site_start)*yPRE_i );
+plot([0 100], [yPRE*10 yPRE*10], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',2);
+yPRE_i = yPRE_i+1;
+YTicks = cat(2, YTicks, yPRE*10);
+YTickLabels = cat(2, YTickLabels,  {[num2str(round(yPRE)*10) ' '] });
+[YTicks, b] = sort(YTicks);
+YTickLabels = YTickLabels(b);
+set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
+
+
 box off;
+
 

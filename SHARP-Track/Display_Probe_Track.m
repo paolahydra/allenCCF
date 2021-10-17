@@ -4,12 +4,12 @@
 
 %% ENTER PARAMETERS AND FILE LOCATION
 
-% file location of probe points
-processed_images_folder = 'C:\Drive\Histology\brainX\processed';
-
-% directory of reference atlas files
-annotation_volume_location = 'C:\Drive\Histology\for tutorial\annotation_volume_10um_by_index.npy';
-structure_tree_location = 'C:\Drive\Histology\for tutorial\structure_tree_safe_2017.csv';
+% % file location of probe points
+% folder_processed_images = 'C:\Drive\Histology\brainX\processed';
+% 
+% % directory of reference atlas files
+% annotation_volume_location = 'C:\Drive\Histology\for tutorial\annotation_volume_10um_by_index.npy';
+% structure_tree_location = 'C:\Drive\Histology\for tutorial\structure_tree_safe_2017.csv';
 
 % name of the saved probe points
 % probe_save_name_suffix = 'electrode_track_1';
@@ -22,23 +22,23 @@ probes_to_analyze = 'all';  % [1 2]
 % key parameters
 % --------------
 % how far into the brain did you go from the surface, either for each probe or just one number for all -- in mm
-probe_lengths = 4; 
+probe_lengths = 4.500; 
 
 % from the bottom tip, how much of the probe contained recording sites -- in mm
-active_probe_length = 3.84;
+active_probe_length = 0.200;
 
 % distance queried for confidence metric -- in um
-probe_radius = 100; 
+probe_radius = 70; 
 
 % overlay the distance between parent regions in gray (this takes a while)
 show_parent_category = false; 
 
 % plot this far or to the bottom of the brain, whichever is shorter -- in mm
-distance_past_tip_to_plot = .5;
+distance_past_tip_to_plot = 0.5;
 
 % set scaling e.g. based on lining up the ephys with the atlas
 % set to *false* to get scaling automatically from the clicked points
-scaling_factor = false;
+scaling_factor = false;    % 1.05-1.12 reasonable range
 
 
 % ---------------------
@@ -82,7 +82,7 @@ elseif strcmp(plane,'transverse')
 end
 
 % load probe points
-probePoints = load(fullfile(processed_images_folder, ['probe_points' probe_save_name_suffix]));
+probePoints = load(fullfile(folder_processed_images, ['probe_points' probe_save_name_suffix]));
 ProbeColors = .75*[1.3 1.3 1.3; 1 .75 0;  .3 1 1; .4 .6 .2; 1 .35 .65; .7 .7 .9; .65 .4 .25; .7 .95 .3; .7 0 0; .6 0 .7; 1 .6 0]; 
 % order of colors: {'white','gold','turquoise','fern','bubble gum','overcast sky','rawhide', 'green apple','purple','orange','red'};
 fwireframe = [];
