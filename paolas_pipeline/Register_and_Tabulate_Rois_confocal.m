@@ -149,7 +149,7 @@ for i = 1:length(image_file_names)
             
             curr_slice_trans = imwarp(J, transform_data.transform, 'OutputView',R);
             if sum(curr_slice_trans(:))==0
-                fprintf('cell #%d is being wrongly assigned to the center of the image. Increase dilateF', p_i)
+                fprintf('cell #%d is being wrongly assigned to the center of the image. Increase dilateF.\n', p_i)
                 error('Some ROIs are not correctly transformed. Increase the value assigned to dilateF.' )
             end
             rois = uint8(imregionalmax(curr_slice_trans));
