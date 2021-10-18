@@ -84,7 +84,7 @@ for i = 1:length(image_file_names)
         %% for each detected cell, make an image and reapply all the transformations, store new xy coords
         
         im0 = false(T1.originalImage_RowCol_size);
-        dilateF = 10; %if too small it sometimes disappear during transformations. If too big I am afraid it might become less precise, but I am not sure about this.
+        dilateF = 50; %if too small it sometimes disappear during transformations. If too big I am afraid it might become less precise, but I am not sure about this.
         roi_location = zeros(length(x),3);
         roi_annotation = cell(length(x),3);
 
