@@ -61,11 +61,13 @@ save_folder = fullfile(image_folder, 'startingSingleSlices');
 
 %save the script (generalPipeline.m)!!
 
+repositoryTag = 'SR_GPR'; %this is the SliceRegistrationConfocal pipeline - these scripts are added to gitignore, useful to know where they came from
 originalscript = which('generalPipeline');
 [a, b] = fileparts(originalscript);
-scriptname = fullfile(a, sprintf('generalPipeline_%s.m',image_tag(1:end-1)));
+scriptname = fullfile(a, sprintf('generalPipeline_%s_%s.m',repositoryTag, image_tag(1:end-1)));
 copyfile(originalscript, scriptname)
 edit(scriptname)
+
 
 
 %% 1. do once, then skip: PP's preprocessing of axioscan images in ImageJ
