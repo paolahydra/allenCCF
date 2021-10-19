@@ -7,7 +7,7 @@ transf_atlasreg_folder  = fullfile(input_folder, 'startingSingleSlices/processed
 %% set up INPUTS
 
 dilateF = 50; %if too small it sometimes disappear during transformations. If too big I am afraid it might become less precise, but I am not sure about this.
-        
+i_start_filenameroot = 5; %if needing to get rid of some variable prefix which makes filenames different, set this.       
 
 %1. list all the registered images
 d = dir (fullfile(transf_atlasreg_folder, '*_transform_data.mat'));
@@ -40,7 +40,7 @@ a = strfind(transfs_prepr{1}, image_tag);
 if ~isempty(a), k(2) = 1; end
 a = strfind(celldetection_csvs{1}, image_tag);
 if ~isempty(a), k(3) = 1; end
-if sum(k)<3
+if sum(k==0)>=1
     warning('Your file naming system is inconsistent.')
     fprintf('WARNING. Your file naming system is inconsistent.\n  You should keep the same image tag in all files of the same brain.\n  You should use zeros before single-digit numbers so that your numbering is made of the same number of digits across files.\n\n  I will try to work with this anyways, but do check your output.\n')
     fprintf('\nLooking for image tag:\n  %s\n', image_tag);
@@ -89,35 +89,60 @@ end
 
 
 %% loop through all the registered images and find the corresponding celldetection file, if any, and register ROIs
-diary(fullfile(input_folder, sprintf('LOG_Register_and_Tabulate_Rois_%s', datestr(now,'YYMMDD_hhmmss'))))
+% diary(fullfile(input_folder, sprintf('LOG_Register_and_Tabulate_Rois_%s', datestr(now,'YYMMDD_hhmmss'))))
 fprintf('DilateF used:   %d \n\n', dilateF)
 countIM = 0;
 for i = 1:length(transfs)
     if useImageTag
-        [~,filename,~] = fileparts(transfs{i});
-        starts = regexpi(filename, image_tag, 'start'); %take also the image_tag together
-        ends = regexpi(filename, '\d*', 'end');
-        image_var_pos_i = starts : ends(SORTERcol)+1; %plus 1 deals with missing zeros in two-digit numbers.
-        if starts > ends %what the heck of a filename did you make?
-            ends = regexpi(filename, image_tag, 'end'); %take also the image_tag together
-            starts = regexpi(filename, '\d*', 'start');
-            image_var_pos_i = starts(SORTERcol) : ends;
-        end
-        vartag = transfs{i}(image_var_pos_i);
-
-        %now check if you actually have matching files
-        if sum(contains(transfs, vartag))==1 && sum(contains(celldetection_csvs, vartag))==1
-            countIM = countIM+1;
-            transf_file_prepr = fullfile(folder_processed_images, transfs_prepr{contains(transfs_prepr, vartag)});
-            transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{contains(transfs, vartag)});
-            csv_file = fullfile(input_folder, celldetection_csvs{contains(celldetection_csvs, vartag)});
+        if SORTERcol~= 0
+            [~,filename,~] = fileparts(transfs{i});
+            starts = regexpi(filename, image_tag, 'start'); %take also the image_tag together
+            ends = regexpi(filename, '\d*', 'end');
+            image_var_pos_i = starts : ends(SORTERcol)+1; %plus 1 deals with missing zeros in two-digit numbers.
+            if starts > ends %what the heck of a filename did you make?
+                ends = regexpi(filename, image_tag, 'end'); %take also the image_tag together
+                starts = regexpi(filename, '\d*', 'start');
+                image_var_pos_i = starts(SORTERcol) : ends;
+            end
+            vartag = transfs{i}(image_var_pos_i);
             
-            fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
-            fileroot = fileroot{1};
+            %now check if you actually have matching files
+            if sum(contains(transfs, vartag))==1 && sum(contains(celldetection_csvs, vartag))==1
+                countIM = countIM+1;
+                transf_file_prepr = fullfile(folder_processed_images, transfs_prepr{contains(transfs_prepr, vartag)});
+                transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{contains(transfs, vartag)});
+                csv_file = fullfile(input_folder, celldetection_csvs{contains(celldetection_csvs, vartag)});
+                
+                fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
+                fileroot = fileroot{1};
+            else
+                fprintf('I could not find matching transf and csv files for: \n   %s\n',transfs{i})
+                disp('Skipping it')
+                continue
+            end
         else
-            fprintf('I could not find matching transf and csv files for: \n   %s\n',transfs{i})
-            disp('Skipping it')
-            continue
+            itstart = strfind(transfs{i}, image_tag);
+            [~,filename,~] = fileparts(transfs{i});
+            if contains(filename, '_preprocessed')
+                i_delete = strfind(filename, '_preprocessed');
+                filename(i_delete:end) = [];
+            end
+            image_var_pos_i = length(image_tag)+itstart : length(filename); %indices in image_file_names
+            vartag = filename(image_var_pos_i);
+            %now check if you actually have matching files
+            if sum(contains(transfs, vartag))==1 && sum(contains(celldetection_csvs, vartag))==1
+                countIM = countIM+1;
+                transf_file_prepr = fullfile(folder_processed_images, transfs_prepr{contains(transfs_prepr, vartag)});
+                transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{contains(transfs, vartag)});
+                csv_file = fullfile(input_folder, celldetection_csvs{contains(celldetection_csvs, vartag)});
+                
+                fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
+                fileroot = fileroot{1};
+            else
+                fprintf('I could not find matching transf and csv files for: \n   %s\n',transfs{i})
+                disp('Skipping it')
+                continue
+            end
         end
     elseif easymatching %just trust the sorting
         countIM = countIM+1;
@@ -128,25 +153,50 @@ for i = 1:length(transfs)
         fileroot = regexp(transfs{i}, '_preprocessed_transform_data.mat', 'split');
         fileroot = fileroot{1};
     else %try without image_tag
-        [~,filename,~] = fileparts(transfs{i});
-        starts = regexpi(filename,  '\d*', 'start');
-        ends = regexpi(filename, '\d*', 'end');
-        image_var_pos_i = max(starts(SORTERcol)-3,1) : ends(SORTERcol)+1; %plus 1 deals with missing zeros in two-digit numbers.
-        vartag = transfs{i}(image_var_pos_i);
-
-        %now check if you actually have matching files
-        if sum(contains(transfs, vartag))==1 && sum(contains(celldetection_csvs, vartag))==1
-            countIM = countIM+1;
-            transf_file_prepr = fullfile(folder_processed_images, transfs_prepr{contains(transfs_prepr, vartag)});
-            transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{contains(transfs, vartag)});
-            csv_file = fullfile(input_folder, celldetection_csvs{contains(celldetection_csvs, vartag)});
+        if SORTERcol ~= 0
+            [~,filename,~] = fileparts(transfs{i});
+            starts = regexpi(filename,  '\d*', 'start');
+            ends = regexpi(filename, '\d*', 'end');
+            image_var_pos_i = max(starts(SORTERcol)-3,1) : ends(SORTERcol)+1; %plus 1 deals with missing zeros in two-digit numbers.
+            vartag = transfs{i}(image_var_pos_i);
             
-            fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
-            fileroot = fileroot{1};
+            %now check if you actually have matching files
+            if sum(contains(transfs, vartag))==1 && sum(contains(celldetection_csvs, vartag))==1
+                countIM = countIM+1;
+                transf_file_prepr = fullfile(folder_processed_images, transfs_prepr{contains(transfs_prepr, vartag)});
+                transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{contains(transfs, vartag)});
+                csv_file = fullfile(input_folder, celldetection_csvs{contains(celldetection_csvs, vartag)});
+                
+                fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
+                fileroot = fileroot{1};
+            else
+                fprintf('I could not find matching transf and csv files for: \n   %s\n',transfs{i})
+                disp('Skipping it')
+                continue
+            end
         else
-            fprintf('I could not find matching transf and csv files for: \n   %s\n',transfs{i})
-            disp('Skipping it')
-            continue
+            itstart = i_start_filenameroot; %set this manually to get rid of the variable prefix of filenames...
+            [~,filename,~] = fileparts(transfs{i});
+            if contains(filename, '_preprocessed')
+                i_delete = strfind(filename, '_preprocessed');
+                filename(i_delete:end) = [];
+            end
+            image_var_pos_i = itstart : length(filename); %indices in image_file_names
+            vartag = filename(image_var_pos_i);
+            %now check if you actually have matching files
+            if sum(contains(transfs, vartag))==1 && sum(contains(celldetection_csvs, vartag))==1
+                countIM = countIM+1;
+                transf_file_prepr = fullfile(folder_processed_images, transfs_prepr{contains(transfs_prepr, vartag)});
+                transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{contains(transfs, vartag)});
+                csv_file = fullfile(input_folder, celldetection_csvs{contains(celldetection_csvs, vartag)});
+                
+                fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
+                fileroot = fileroot{1};
+            else
+                fprintf('I could not find matching transf and csv files for: \n   %s\n',transfs{i})
+                disp('Skipping it')
+                continue
+            end
         end
     end
     % state the pairing
@@ -209,7 +259,7 @@ for i = 1:length(transfs)
             %% reapply all the preprocessing transformations
             % rotate to standard coronal orientation (coordinate change!)
             J = imrotate(IM, T1.rotation);
-            
+% figure; imshow(J)            
             % do the cropping/dilating
             if ( T1.reference_originalImage_RowCol_size(1) < size(J, 1) || T1.reference_originalImage_RowCol_size(2) < size(J, 2) )
                 % first crop the image to the reference dimension
@@ -249,11 +299,12 @@ for i = 1:length(transfs)
             if T1.furtherRotation %this is currently disabled anyhow, bc I did not want to deal with cropping, especially from several now unsaved iterations of rotations
                 J = imrotate(J,T1.furtherRotation,'nearest','crop'); %check that it works reliably
             end
-            
+% figure; imshow(J)             
 
             %% reapply the atlas reg transformations
             
             curr_slice_trans = imwarp(J, transform_data.transform, 'OutputView',R);
+% figure; imshow(curr_slice_trans) 
             if sum(curr_slice_trans(:))==0
                 fprintf('cell #%d is being wrongly assigned to the center of the image. Increase dilateF.\n', p_i)
                 error('Some ROIs are not correctly transformed. Increase the value assigned to dilateF.' )
