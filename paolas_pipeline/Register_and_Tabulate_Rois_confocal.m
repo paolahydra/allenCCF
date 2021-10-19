@@ -89,7 +89,7 @@ end
 
 
 %% loop through all the registered images and find the corresponding celldetection file, if any, and register ROIs
-diary(fullfile(input_folder, sprintf('LOG_Register_and_Tabulate_Rois_%s', datetime('now'))))
+diary(fullfile(input_folder, sprintf('LOG_Register_and_Tabulate_Rois_%s', datestr(now,'YYMMDD_hhmmss'))))
 fprintf('DilateF used:   %d \n\n', dilateF)
 countIM = 0;
 for i = 1:length(transfs)
