@@ -1,32 +1,86 @@
-function T_roi = Register_and_Tabulate_Rois_confocal(object_tag, image_tag, input_folder, image_file_names, av, st, tv_plot, microns_per_pixel, reference_size )
+function T_roi = Register_and_Tabulate_Rois_confocal(object_tag, image_tag, input_folder, av, st, tv_plot, microns_per_pixel, reference_size )
+warning('check the output to see if the coordinates need flipping about a specific axis')
 
 folder_processed_images = fullfile(input_folder, 'startingSingleSlices/processed');
 transf_atlasreg_folder  = fullfile(input_folder, 'startingSingleSlices/processed/transformations');
 
 %% set up INPUTS
-%1. find the variable part of the image filenames
-k = strfind(image_file_names{1}, image_tag);
-assert(~isempty(k), 'check for image filename root (image_tag variable)')
-[~,filename,~] = fileparts(image_file_names{1});
-if contains(filename, '_preprocessed')
-    i_delete = strfind(filename, '_preprocessed');
-    filename(i_delete:end) = [];
-end
-image_var_pos_i = length(image_tag)+k : length(filename); %indices in image_file_names
-% image_file_names{1}(image_var_pos_i)
 
-%2. list all the registered images
+dilateF = 50; %if too small it sometimes disappear during transformations. If too big I am afraid it might become less precise, but I am not sure about this.
+        
+
+%1. list all the registered images
 d = dir (fullfile(transf_atlasreg_folder, '*_transform_data.mat'));
 transfs = {d.name};
+transfs = natsortfiles(transfs);
 
-%3. list also all the preprocessing transformation files
+%2. list also all the preprocessing transformation files
 d = dir (fullfile(folder_processed_images, '*_transf.mat'));
 transfs_prepr = {d.name};
+transfs_prepr = natsortfiles(transfs_prepr);
 
-%4. list all csvs calculated on 'startingSingleSlices' images 
+%3. list all csvs calculated on 'startingSingleSlices' images 
 celldetection_csvs = dir([input_folder filesep '*csv']);
 celldetection_csvs = natsortfiles({celldetection_csvs.name});
+celldetection_csvs = natsortfiles(celldetection_csvs);
 
+
+if (length(transfs) == length(transfs_prepr)) && (length(transfs) == length(celldetection_csvs))
+    % all files have been processed. Matching them should be
+    % straightforward...
+    easymatching = 1;
+else
+    easymatching = 0;
+end
+
+k = zeros(3,1);
+a = strfind(transfs{1}, image_tag);
+if ~isempty(a), k(1) = 1; end
+a = strfind(transfs_prepr{1}, image_tag);
+if ~isempty(a), k(2) = 1; end
+a = strfind(celldetection_csvs{1}, image_tag);
+if ~isempty(a), k(3) = 1; end
+if sum(k)<3
+    warning('Your file naming system is inconsistent.')
+    fprintf('WARNING. Your file naming system is inconsistent.\n  You should keep the same image tag in all files of the same brain.\n  You should use zeros before single-digit numbers so that your numbering is made of the same number of digits across files.\n\n  I will try to work with this anyways, but do check your output.\n')
+    fprintf('\nLooking for image tag:\n  %s\n', image_tag);
+    fprintf('\nHere are example filenames that I am trying to pair (It looks like you are not making my job easy):\n  %s\n  %s\n  %s\n',transfs{1},transfs_prepr{1},celldetection_csvs{1})
+    fprintf('----------------------------------------------------\n\n')
+    useImageTag = 0;
+else
+    useImageTag = 1;
+end
+%% either you really find the sorting variable part in the filename and use that one...
+% find which number is the sorting one
+clear NUMs colDouble
+SORTERcol = 0;
+for i = 1:length(transfs)
+    NUMs(i,:) = regexpi(transfs{i}, '\d*', 'match');
+end
+for c = 1:size(NUMs,2)
+    col = (NUMs(:,c));
+    clear colDouble
+    for ij = 1:length(col)
+        colDouble(ij,1) = str2double(col(ij));
+    end
+    if length(unique((colDouble)))<length(colDouble)
+        continue
+    else
+        [~,bi] = sort(colDouble);
+        if isequal(bi(:)', 1:length(colDouble))
+            %this is not the sorting element in natsortfiles (which we
+            %assume we trust.)
+            SORTERcol = c;
+        else
+            continue
+        end
+    end   
+end
+    
+
+
+
+    
 %% set up OUTPUTS
 roiTable_name = fullfile(folder_processed_images, sprintf('%s%s_roiTable_All.csv',image_tag, object_tag));
 if exist(roiTable_name, 'file')
@@ -35,19 +89,72 @@ end
 
 
 %% loop through all the registered images and find the corresponding celldetection file, if any, and register ROIs
+diary(fullfile(input_folder, sprintf('LOG_Register_and_Tabulate_Rois_%s', datetime('now'))))
+fprintf('DilateF used:   %d \n\n', dilateF)
 countIM = 0;
-for i = 1:length(image_file_names)
-    vartag = image_file_names{i}(image_var_pos_i);
-    
-    if sum(contains(transfs, vartag))==1 && sum(contains(celldetection_csvs, vartag))==1
+for i = 1:length(transfs)
+    if useImageTag
+        [~,filename,~] = fileparts(transfs{i});
+        starts = regexpi(filename, image_tag, 'start'); %take also the image_tag together
+        ends = regexpi(filename, '\d*', 'end');
+        image_var_pos_i = starts : ends(SORTERcol)+1; %plus 1 deals with missing zeros in two-digit numbers.
+        if starts > ends %what the heck of a filename did you make?
+            ends = regexpi(filename, image_tag, 'end'); %take also the image_tag together
+            starts = regexpi(filename, '\d*', 'start');
+            image_var_pos_i = starts(SORTERcol) : ends;
+        end
+        vartag = transfs{i}(image_var_pos_i);
+
+        %now check if you actually have matching files
+        if sum(contains(transfs, vartag))==1 && sum(contains(celldetection_csvs, vartag))==1
+            countIM = countIM+1;
+            transf_file_prepr = fullfile(folder_processed_images, transfs_prepr{contains(transfs_prepr, vartag)});
+            transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{contains(transfs, vartag)});
+            csv_file = fullfile(input_folder, celldetection_csvs{contains(celldetection_csvs, vartag)});
+            
+            fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
+            fileroot = fileroot{1};
+        else
+            fprintf('I could not find matching transf and csv files for: \n   %s\n',transfs{i})
+            disp('Skipping it')
+            continue
+        end
+    elseif easymatching %just trust the sorting
         countIM = countIM+1;
-        transf_file_prepr = fullfile(folder_processed_images, transfs_prepr{contains(transfs_prepr, vartag)});
-        transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{contains(transfs, vartag)});
-        csv_file = fullfile(input_folder, celldetection_csvs{contains(celldetection_csvs, vartag)});
+        transf_file_prepr = fullfile(folder_processed_images, transfs_prepr{i});
+        transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{i});
+        csv_file = fullfile(input_folder, celldetection_csvs{i});
         
-        fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
+        fileroot = regexp(transfs{i}, '_preprocessed_transform_data.mat', 'split');
         fileroot = fileroot{1};
-        fprintf('registering file:\n  %s\n', csv_file )
+    else %try without image_tag
+        [~,filename,~] = fileparts(transfs{i});
+        starts = regexpi(filename,  '\d*', 'start');
+        ends = regexpi(filename, '\d*', 'end');
+        image_var_pos_i = max(starts(SORTERcol)-3,1) : ends(SORTERcol)+1; %plus 1 deals with missing zeros in two-digit numbers.
+        vartag = transfs{i}(image_var_pos_i);
+
+        %now check if you actually have matching files
+        if sum(contains(transfs, vartag))==1 && sum(contains(celldetection_csvs, vartag))==1
+            countIM = countIM+1;
+            transf_file_prepr = fullfile(folder_processed_images, transfs_prepr{contains(transfs_prepr, vartag)});
+            transf_file_atlas = fullfile(folder_processed_images, 'transformations', transfs{contains(transfs, vartag)});
+            csv_file = fullfile(input_folder, celldetection_csvs{contains(celldetection_csvs, vartag)});
+            
+            fileroot = regexp(transfs{contains(transfs, vartag)}, '_preprocessed_transform_data.mat', 'split');
+            fileroot = fileroot{1};
+        else
+            fprintf('I could not find matching transf and csv files for: \n   %s\n',transfs{i})
+            disp('Skipping it')
+            continue
+        end
+    end
+    % state the pairing
+    [~, FP_trprep] = fileparts(transf_file_prepr);
+    [~, FP_tratl] = fileparts(transf_file_atlas);
+    [~, FP_csv] = fileparts(csv_file);
+    fprintf('----------------------------------------------------\n')
+    fprintf('registering files:\n    %s\n    %s\n    %s\n', FP_trprep, FP_tratl, FP_csv )
         
         %% read the preprocessing transformations in
         T1 = load(transf_file_prepr);
@@ -57,7 +164,7 @@ for i = 1:length(image_file_names)
         y = TC.POSITION_Y/microns_per_pixel; %in image coordinates
 
         %% Kevin: you need to flip the x axis of your coordinates - this needs to be made more robust
-        warning('check the output to see if the coordinates need flipping about a specific axis')
+%         warning('check the output to see if the coordinates need flipping about a specific axis')
 %         x = T1.originalImage_RowCol_size(2) - x;
         
         
@@ -84,7 +191,10 @@ for i = 1:length(image_file_names)
         %% for each detected cell, make an image and reapply all the transformations, store new xy coords
         
         im0 = false(T1.originalImage_RowCol_size);
+<<<<<<< Updated upstream
         dilateF = 50; %if too small it sometimes disappear during transformations. If too big I am afraid it might become less precise, but I am not sure about this.
+=======
+>>>>>>> Stashed changes
         roi_location = zeros(length(x),3);
         roi_annotation = cell(length(x),3);
 
@@ -214,8 +324,7 @@ for i = 1:length(image_file_names)
         hold on
         scatter(pixels_column, pixels_row, 20, 'g','filled')
         savefig(fullfile(folder_processed_images, sprintf('%s_registeredCells',fileroot)))
-    elseif sum(contains(transfs, vartag))>1 || sum(contains(celldetection_csvs, vartag))>1
-        error('Your file naming system seems ambiguous. Make sure the variable part contains the same number of digits/letters.')
-    end
-    end
+
+end
+diary off
 end
