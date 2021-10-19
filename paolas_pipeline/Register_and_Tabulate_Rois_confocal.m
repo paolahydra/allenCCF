@@ -191,10 +191,6 @@ for i = 1:length(transfs)
         %% for each detected cell, make an image and reapply all the transformations, store new xy coords
         
         im0 = false(T1.originalImage_RowCol_size);
-<<<<<<< Updated upstream
-        dilateF = 50; %if too small it sometimes disappear during transformations. If too big I am afraid it might become less precise, but I am not sure about this.
-=======
->>>>>>> Stashed changes
         roi_location = zeros(length(x),3);
         roi_annotation = cell(length(x),3);
 
