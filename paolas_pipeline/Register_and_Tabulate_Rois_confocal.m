@@ -272,7 +272,11 @@ for i = 1:length(transfs)
         while(isRegisteredCell==0)
             % dilateF_actual(p_i) = dilateF_use;  %this could be saved in the future, but for now I decided not to.
             IM = im0;
-            IM(Y-dilateF_use:Y+dilateF_use, X-dilateF_use:X+dilateF_use) = true;
+            ym = max(1,Y-dilateF_use);
+            yp = min(Y+dilateF_use, size(IM,1));
+            xm = max(1,X-dilateF_use);
+            xp = min(X+dilateF_use, size(IM,2));
+            IM(ym:yp, xm:xp) = true;
             
             %% reapply all the preprocessing transformations
             % rotate to standard coronal orientation (coordinate change!)
