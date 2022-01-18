@@ -1,4 +1,4 @@
-% This software is based on:
+edit% This software is based on:
 % https://github.com/cortex-lab/allenCCF/
 
 % Arber lab mainteined repository (forked from cortex-lab):
@@ -31,10 +31,16 @@ pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/
 
 
 
-
 annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_index.npy');
 structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
 template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
+
+
+generalPipelinesFolder = []; %leave empty if you want to save the 
+                        % mouse-specific script in the same folder as the
+                        % generalPipeline.m script.  Or else, specify a new
+                        % folder here.
+
 
 
 % other stable settings:
@@ -83,8 +89,12 @@ end
 
 repositoryTag = 'SRC'; %this is the SliceRegistrationConfocal pipeline - these scripts are added to gitignore, useful to know where they came from
 originalscript = which('generalPipeline');
-[a, b] = fileparts(originalscript);
-scriptname = fullfile(a, sprintf('generalPipeline_%s_%s.m',repositoryTag, image_tag(1:end-1)));
+if isempty(generalPipelinesFolder)
+    [a, ~] = fileparts(originalscript);
+    scriptname = fullfile(a, sprintf('generalPipeline_%s_%s.m',repositoryTag, image_tag(1:end-1)));
+else
+    scriptname = fullfile(generalPipelinesFolder, sprintf('generalPipeline_%s_%s.m',repositoryTag, image_tag(1:end-1)));
+end
 copyfile(originalscript, scriptname)
 edit(scriptname)
 
