@@ -19,38 +19,66 @@
 % * remember to run one section at a time, instead of the whole script at once *
 
 
-%%  always run: general settings (set once)
-addpath(genpath('/Users/galileo/GitHub/allenCCF'))
-addpath(genpath('/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/npy-matlab-master/npy-matlab'))
-pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+%%  set once, then always run: specify paths and settings for the specific brain to register
+% move your images to a local disk (SSD possibly) for much faster processing!
+image_folder = '/Users/galileo/dati/registered_brains_completed/ephys_probeLoc/1046411';   %change this
+image_tag = 'mouse_1046411';                                               %change this - use an unequivocal tag for your experiment
+microns_per_pixel = 5.1803; %3.4536; %3.8852; %take this value from your tiff filename
 
-genPipScriptLibrary = '/Users/galileo/GitHub/generalPipelineUsedScripts';
-repositoryTag = 'SR_GPR'; %SliceRegistration, SliceRegistration_ProbeRegistration, or SliceRegistrationConfocal pipeline - these scripts are added to gitignore, useful to know where they came from
+% increase gain if for some reason the images are not bright enough
+gain = 3;   % for visualization only: during cropping or atlas alignment
 
-% addpath(genpath('C:\GitHub\allenCCF')) %clone the repository from : https://github.com/paolahydra/allenCCF/tree/sliceRegistration_confocal     
-% addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas'))
-% pathToAtlas = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\';
 
+% stable settings (no need to change):
+repositoryTag = 'SR_GPR'; %this is the SliceRegistrationConfocal pipeline - these scripts are added to gitignore, useful to know where they came from
+
+generalPipelinesFolder = 'generalPipelineUsedScripts'; %leave empty if you want to save the 
+                        % mouse-specific script in the same folder as the
+                        % generalPipeline.m script.  Or else, specify a new
+                        % folder here.
+
+plane = 'coronal';  % plane to view ('coronal', 'sagittal', 'transverse')
+% transformation to use for registration:
+transformationType = 'pwl';     %use 'projective', or 'pwl' (piece-wise linear: more advanced).                       
+  
+
+%%  always run: (set once to make it more easily portable across the computers you use)
+[~,localhost] = system('hostname');
+% archstr = computer('arch');     % it could be of use too
+
+if strcmp(localhost(1:end-1), 'Paolas-MacBook-Pro.local')
+    rootFolderScripts = '/Users/galileo/GitHub/';
+    addpath(genpath('/Users/galileo/GitHub/matlabUtilities/npy-matlab-master/npy-matlab'))
+    pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+elseif strcmp(localhost(1:end-1), 'f452d-96617e') % put yours here
+    rootFolderScripts = 'C:\GitHub\';    % % -------------------   put yours here
+    addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')) %includes npy
+    pathToAtlas = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\';
+else 
+    rootFolderScripts = 'C:\Users\patepaol\Documents\GitHub';  % % -------------------   put yours here
+    addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')) %includes npy
+    pathToAtlas = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\';
+end
+clear localhost
+addpath(genpath(fullfile(rootFolderScripts, 'allenCCF')))
+
+
+% no need to change below:
 
 annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_index.npy');
 structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
 template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
 
-% other stable settings:
-% plane to view ('coronal', 'sagittal', 'transverse')
-plane = 'coronal';
-% transformation to use for registration:
-transformationType = 'pwl';     %use 'projective', or 'pwl' (piece-wise linear: more advanced).
+A = matlab.desktop.editor.getActive;                                                
+if ~isempty(generalPipelinesFolder)                       
+    genPipScriptLibrary = fullfile(rootFolderScripts, generalPipelinesFolder);
+    if ~exist(genPipScriptLibrary, 'dir')
+        mkdir(genPipScriptLibrary)
+    end
+else
+    [genPipScriptLibrary, ~] = fileparts(A.Filename);
+end
 
-
-%%  set once, then always run: specify paths and settings for the specific brain to register
-% move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = '/Users/galileo/dati/registered_brains_completed/ephys_probeLoc/1031707';   %change this
-image_tag = 'mouse_1031707';                                               %change this - use an unequivocal tag for your experiment
-microns_per_pixel = 5.1803; %3.4536; %3.8852; %take this value from your tiff filename
-
-% increase gain if for some reason the images are not bright enough
-gain = 3;   % for visualization only: during cropping or atlas alignment
 
 if ~strcmp( image_tag(end), '_')
     image_tag = cat(2, image_tag, '_');
@@ -60,17 +88,21 @@ cd(image_folder)
 save_folder = fullfile(image_folder, 'startingSingleSlices');
 folder_processed_images = fullfile(save_folder, 'processed');
 
-%% do once, then skip: save the script and then create a new version with specific parameters - continue with the new script.
-A = matlab.desktop.editor.getActive;
+
+%
 A.save;
 scriptname = fullfile(genPipScriptLibrary, sprintf('generalPipeline_%s_%s.m',repositoryTag, image_tag(1:end-1)));
 
 if strcmp(A.Filename, scriptname)
     fprintf('Script %s already existing and in use.\n',sprintf('generalPipeline_%s_%s.m',repositoryTag, image_tag(1:end-1)))
 else
+    if exists(scriptname, 'file') %do not overwrite
+        scriptname = fullfile(genPipScriptLibrary, sprintf('generalPipeline_%s_%s_s.m',repositoryTag, image_tag(1:end-1)), string(datetime('now', 'Format','yyyyMMdd_hhmmss')));
+    end
     copyfile(A.Filename, scriptname)
     A.close
-    matlab.desktop.editor.openAndGoToLine(scriptname, 75);
+    clear A
+    matlab.desktop.editor.openAndGoToLine(scriptname, getcurrentline+4);
 end
 
 
