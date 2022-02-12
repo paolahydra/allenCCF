@@ -61,7 +61,7 @@ while ii<size(c,2)
         y = c(2,ii+1:ii+n);
         x = [x(end-buff:end) x x(1:buff)]; % buffer makes ends meet
         y = [y(end-buff:end) y y(1:buff)];
-        x = smooth(x,25,'loess');
+        x = smooth(x,25,'loess'); %curve-fitting toolbox?
         y = smooth(y,25,'loess');
         x = [x(buff+1:end-buff-1);x(buff+1)];
         y = [y(buff+1:end-buff-1);y(buff+1)];
