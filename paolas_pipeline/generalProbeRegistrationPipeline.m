@@ -21,8 +21,8 @@
 
 %%  set once, then always run: specify paths and settings for the specific brain to register
 % move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = '/Users/galileo/dati/registered_brains_completed/ephys_probeLoc/1046411';   %change this
-image_tag = 'mouse_1046411';                                               %change this - use an unequivocal tag for your experiment
+image_folder = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\patepaol\intan_recs\anatomy_probeMapping\1025049';   %change this
+image_tag = 'mouse_1025049';                                                 %change this - use an unequivocal tag for your experiment
 microns_per_pixel = 5.1803; %3.4536; %3.8852; %take this value from your tiff filename
 
 % increase gain if for some reason the images are not bright enough
@@ -96,7 +96,7 @@ scriptname = fullfile(genPipScriptLibrary, sprintf('generalPipeline_%s_%s.m',rep
 if strcmp(A.Filename, scriptname)
     fprintf('Script %s already existing and in use.\n',sprintf('generalPipeline_%s_%s.m',repositoryTag, image_tag(1:end-1)))
 else
-    if exists(scriptname, 'file') %do not overwrite
+    if exist(scriptname, 'file') %do not overwrite
         scriptname = fullfile(genPipScriptLibrary, sprintf('generalPipeline_%s_%s_s.m',repositoryTag, image_tag(1:end-1)), string(datetime('now', 'Format','yyyyMMdd_hhmmss')));
     end
     copyfile(A.Filename, scriptname)
