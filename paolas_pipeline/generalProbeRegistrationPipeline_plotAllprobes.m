@@ -17,19 +17,28 @@
 
 
 % * remember to run one section at a time, instead of the whole script at once *
+doinitialize = 0;
+if doinitialize
+    fwireframe = [];
+    fwireframe = plotBrainGrid([], [], fwireframe, black_brain);  %-PP uncomment
+    hold on; 
+    fwireframe.InvertHardcopy = 'off';
+end
+cab(5)
 makeVideo = 0;
-
 %%  set once, then always run: specify paths and settings for the specific brain to register
 % move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\patepaol\intan_recs\anatomy_probeMapping\1048878';   %change this
-image_tag = 'mouse_1048878';                                                 %change this - use an unequivocal tag for your experiment
-probe_lengths =         4.650;  % how far into the brain did you go from the surface, either for each probe or just one number for all -- in mm
+image_folder = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\patepaol\intan_recs\anatomy_probeMapping\1046411';   %change this
+image_tag = 'mouse_1046411';                                               %change this - use an unequivocal tag for your experiment
+probe_lengths =         4.250;  % how far into the brain did you go from the surface, either for each probe or just one number for all -- in mm
 active_probe_length =   0.200;  % from the bottom tip, how much of the probe contained recording sites -- in mm
-nSessions_down =        4;      % number of sessions you turned down by an active length
+nSessions_down =        3;      % number of sessions you turned down by an active length
+
+brainNum = 6;
 
 
 microns_per_pixel = 5.1803; %3.4536; %3.8852; %take this value from your tiff filename
-
+cab(5)
 % increase gain if for some reason the images are not bright enough
 gain = 3;   % for visualization only: during cropping or atlas alignment
 
@@ -105,31 +114,12 @@ else
         scriptname = fullfile(genPipScriptLibrary, sprintf('generalPipeline_%s_%s_%s.m',repositoryTag, image_tag(1:end-1), string(datetime('now', 'Format','yyyyMMdd_hhmmss'))));
     end
     copyfile(A.Filename, scriptname)
-    if ~strcmp(which('generalProbeRegistrationPipeline.m'), A.Filename)
-        A.close
-    end
+%     A.close
     clear A
     matlab.desktop.editor.openAndGoToLine(scriptname, getcurrentline+4);
 end
 
 
-%% 1. do once, then skip: PP's preprocessing of axioscan images in ImageJ
-% 1. batch convert all the axioscans ito tiff in ImageJ, using the macro: 
-% batch_convert2tiff_highestResSeries_general.ijm.  Depending on how
-% your images were acquired, you may want to choose the highest resolution
-% series, or the second-highest one (there is a script for this too). 
-% For cell detection, I have had good results for cell detection starting 
-% from an image with 3.6 um per pixel.
-% -- avoid saturating the right tail of the histogram if you want to
-% detect stuff.
-
-
-%% 2. do once, then skip: split axioscans in single figures (one per slice)
-wait2confirmROI = 0;    % if true, you will need to double-click to confirm each ROI. If false, a cropped image is automatically saved.
-                        % wait2confirmROI = 0; is much faster -- IF you don't make mistakes!
-axioscanTiff_slideCropper(image_folder, image_tag, save_folder, microns_per_pixel, wait2confirmROI);
-
- 
 %% always run: filesystem and parameter definition - don't need to change
 % directory of single histology images
 image_folder = save_folder;
@@ -154,82 +144,9 @@ reference_size = [1320 800 1140];
 
 
 % auto: naming definition
-% name of images, in order anterior to posterior or vice versa
-% once these are downsampled they will be named ['original name' '_processed.tif']
-image_file_names = dir([image_folder filesep '*.tif']); % get the contents of the image_folder
-image_file_names = natsortfiles({image_file_names.name});
-% image_file_names = {'slide no 2_RGB.tif','slide no 3_RGB.tif','slide no 4_RGB.tif'}; % alternatively, list each image in order
 
 
-%% 3. do once, then skip: check all images for some to flip or adjust
-Process_Histology_1_PP; 
-%this will interactively allow you to crop, flip, rotate (and permute - untested) slices
-
-% NOTE May 2021: No need to rotate, nor crop, unless you want to.
-% Just check every slice and flip if necessary.
-% this step can be quite fast if you don't dwell too much on rotations/cropping. 
-
-% IMPORTANT:
-% no furter manipulation should be done to the images after this stage.
-
-%% you will need to do cell detection on the *preprocessed* images.
-% step 1:
-% run  batch_split_invertColor_savePNG.ijm script in the 'preprocessed'
-% folder
-
-% step 2:
-% run cellprofiler pipeline
-
-%% 4. do once, then skip: downsample images for atlas registration (to the folder 'processed') - automatic and fast...
-% % consider closing the previous figure when you are done preprocessing:
-% close all
-folder_preprocessed_images = fullfile(save_folder, 'preprocessed');     
-Process_Histology_2_downsample_PP; %this will automatically downsample your *preprocessed* images and save them in the 'processed' folder for registration.
-disp('Downsampled and boosted images were saved in the processed folder')
-% This also increases the gain for better visualization during
-% registration. For some very dark images you may need to set a higher gain and
-% re-run this block.
-
-
-%% 5. Register each slice to the reference atlas
-set(0, 'DefaultFigureWindowStyle', 'docked')
-Navigate_Atlas_and_Register_Slices_PP;
-
-%% as you are registering new slices, run this to keep your table of transformations T up to date.
-T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
-
-
-%%
-% Press 'n' to add a new probe in a new color. Press 'p' to switch between
-% which probe you are marking (the console will then report which probe is 
-% selected). Press 'd' to delete the most recently clicked point from the 
-% selected probe. Press 's' to save the clicked points for analysis.
-
-%%
-% After selecting your probe of interest by pressing 'p', press 'w' to
-% activate probe view mode. This brings up the best-fit line for this probe
-% and the best-fit brain slice along which the line lies. If the probe
-% spans multiple histological slices, as in the example below, this
-% best-fit slice will not correspond to any of the histological slice
-% images. Press 'o' to toggle overlay of brain regions.
-% 
-% Clicking along this line will bring up, in the Transformed Slice & Probe
-% Point Viewer, the point in the histological slice images that is closest
-% to the clicked point (see below). Thus you can verify the quality of the
-% fit. Below, the highlighted areas (in the reticular nucleus (top) and the
-% mediodorsal nucleus (bottom) of the thalamus) were clicked.p
-
-%%
-
-%%
-
-%% edit Display_Probe_Track.m script has been copied down below so that mouse-specific info is saved too
-% edit and run!
-% ------------------------------------------------------------------------
-%          Display Probe Track
-% ------------------------------------------------------------------------
-
-%% ENTER PARAMETERS AND FILE LOCATION
+% % ENTER PARAMETERS AND FILE LOCATION
 
 % % file location of probe points
 % folder_processed_images = 'C:\Drive\Histology\brainX\processed';
@@ -285,7 +202,7 @@ black_brain = true;
 
 
 
-%% GET AND PLOT PROBE VECTOR IN ATLAS SPACE
+% % GET AND PLOT PROBE VECTOR IN ATLAS SPACE
 
 % load the reference brain annotations
 if ~exist('av','var') || ~exist('st','var')
@@ -307,7 +224,7 @@ end
 probePoints = load(fullfile(folder_processed_images, ['probe_points' probe_save_name_suffix]));
 ProbeColors = .75*[1.3 1.3 1.3; 1 .75 0;  .3 1 1; .4 .6 .2; 1 .35 .65; .7 .7 .9; .65 .4 .25; .7 .95 .3; .7 0 0; .6 0 .7; 1 .6 0]; 
 % order of colors: {'white','gold','turquoise','fern','bubble gum','overcast sky','rawhide', 'green apple','purple','orange','red'};
-fwireframe = []; %-PP uncomment
+% fwireframe = []; %-PP uncomment
 
 % scale active_probe_length appropriately
 active_probe_length = active_probe_length*100;
@@ -323,12 +240,12 @@ end
 
 
 
-%% PLOT EACH PROBE -- FIRST FIND ITS TRAJECTORY IN REFERENCE SPACE
+% % PLOT EACH PROBE -- FIRST FIND ITS TRAJECTORY IN REFERENCE SPACE
 
 % create a new figure with wireframe
-fwireframe = plotBrainGrid([], [], fwireframe, black_brain);
-hold on; 
-fwireframe.InvertHardcopy = 'off';
+% fwireframe = plotBrainGrid([], [], fwireframe, black_brain);  %-PP uncomment
+% hold on; 
+% fwireframe.InvertHardcopy = 'off';
 clear probeRecap
 
 for selected_probe = probes
@@ -400,10 +317,10 @@ end
 figure(fwireframe);
 
 % plot probe points
-hp = plot3(curr_probePoints(:,1), curr_probePoints(:,3), curr_probePoints(:,2), '.','linewidth',2, 'color',[ProbeColors(selected_probe,:) .2],'markers',10);
+% hp = plot3(curr_probePoints(:,1), curr_probePoints(:,3), curr_probePoints(:,2), '.','linewidth',2, 'color',[ProbeColors(selected_probe,:) .2],'markers',10);  %-PP uncomment
 
 % plot brain entry point
-plot3(m(1), m(3), m(2), 'r*','linewidth',1)
+% plot3(m(1), m(3), m(2), 'r*','linewidth',1)   %-PP uncomment
 
 % use the deepest clicked point as the tip of the probe, if no scaling provided (scaling_factor = false)
 if use_tip_to_get_reference_probe_length
@@ -435,12 +352,12 @@ percent_of_tract_with_active_sites = min([active_probe_length / (probe_length*10
 active_site_start = probe_length_histo*(1-percent_of_tract_with_active_sites);
 active_probe_position = round([active_site_start  probe_length_histo]);
 
-% plot line the length of the active probe sites in reference space
-plot3(m(1)+p(1)*[active_probe_position(1) active_probe_position(2)], m(3)+p(3)*[active_probe_position(1) active_probe_position(2)], m(2)+p(2)*[active_probe_position(1) active_probe_position(2)], ...
-    'Color', ProbeColors(selected_probe,:), 'LineWidth', 1);
+% % plot line the length of the active probe sites in reference space
+% plot3(m(1)+p(1)*[active_probe_position(1) active_probe_position(2)], m(3)+p(3)*[active_probe_position(1) active_probe_position(2)], m(2)+p(2)*[active_probe_position(1) active_probe_position(2)], ...
+%     'Color', ProbeColors(selected_probe,:), 'LineWidth', 1);   %-PP uncomment
 % plot line the length of the entire probe in reference space
 plot3(m(1)+p(1)*[1 probe_length_histo], m(3)+p(3)*[1 probe_length_histo], m(2)+p(2)*[1 probe_length_histo], ...
-    'Color', ProbeColors(selected_probe,:), 'LineWidth', 1, 'LineStyle',':');
+    'Color', ProbeColors(brainNum,:), 'LineWidth', 1);
 
 
 %% ----------------------------------------------------------------
@@ -492,15 +409,7 @@ end
 
 %%
 
-
-
-
-
 %% load cells (retro_fromMed in github)
-folders2Include={'/Users/galileo/dati/registered_brains_completed/992234', ...
-                '/Users/galileo/dati/registered_brains_completed/993030',  ...
-                '/Users/galileo/dati/registered_brains_completed/993031'};
-
 folders2Include={'\\tungsten-nas.fmi.ch\tungsten\scratch\garber\patepaol\intan_recs\anatomy_probeMapping\reference\992234', ...
                 '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\patepaol\intan_recs\anatomy_probeMapping\reference\993030',  ...
                 '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\patepaol\intan_recs\anatomy_probeMapping\reference\993031'};

@@ -1,6 +1,8 @@
-function borders_table = plotDistToNearestToTip(m, p, av, st, rpl, error_length, active_site_start, probage_past_tip_to_plot, show_parent_category, show_region_table, plane)
+function borders_table = plotDistToNearestToTip(m, p, av, st, rpl, error_length, active_site_start, probage_past_tip_to_plot, show_parent_category, show_region_table, plane, nSessions_down)
 
-
+if nargin<12
+    nSessions_down = 5;
+end
 % these are the query points along the probe tract
 yc = 10*[0:(rpl + probage_past_tip_to_plot*100 )] - 0;
 t = yc/10; % dividing by 10 accounts for the 10um resolution of the atlas
@@ -252,43 +254,15 @@ ylim([1 yc(end)+1])
 plot([0 100], [(active_site_start*10) (active_site_start*10)], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',3);
 plot([0 100], [(rpl)*10 (rpl)*10], 'color', [.1 .1 .1], 'LineStyle',':', 'linewidth',3);
 
-yPRE_i = 1;
-yPRE = (active_site_start - (rpl-active_site_start)*yPRE_i );
-plot([0 100], [yPRE*10 yPRE*10], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',2);
-yPRE_i = yPRE_i+1;
-YTicks = cat(2, YTicks, yPRE*10);
-YTickLabels = cat(2, YTickLabels,  {[num2str(round(yPRE)*10) ' '] });
-[YTicks, b] = sort(YTicks);
-YTickLabels = YTickLabels(b);
-set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
-
-yPRE = (active_site_start - (rpl-active_site_start)*yPRE_i );
-plot([0 100], [yPRE*10 yPRE*10], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',2);
-yPRE_i = yPRE_i+1;
-YTicks = cat(2, YTicks, yPRE*10);
-YTickLabels = cat(2, YTickLabels,  {[num2str(round(yPRE)*10) ' '] });
-[YTicks, b] = sort(YTicks);
-YTickLabels = YTickLabels(b);
-set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
-
-yPRE = (active_site_start - (rpl-active_site_start)*yPRE_i );
-plot([0 100], [yPRE*10 yPRE*10], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',2);
-yPRE_i = yPRE_i+1;
-YTicks = cat(2, YTicks, yPRE*10);
-YTickLabels = cat(2, YTickLabels,  {[num2str(round(yPRE)*10) ' '] });
-[YTicks, b] = sort(YTicks);
-YTickLabels = YTickLabels(b);
-set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
-
-yPRE = (active_site_start - (rpl-active_site_start)*yPRE_i );
-plot([0 100], [yPRE*10 yPRE*10], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',2);
-yPRE_i = yPRE_i+1;
-YTicks = cat(2, YTicks, yPRE*10);
-YTickLabels = cat(2, YTickLabels,  {[num2str(round(yPRE)*10) ' '] });
-[YTicks, b] = sort(YTicks);
-YTickLabels = YTickLabels(b);
-set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
-
+for nsd = 2:nSessions_down
+    yPRE = (rpl - (rpl-active_site_start)*nsd );
+    plot([0 100], [(yPRE*10) (yPRE*10)], 'color',[.1 .1 .1], 'LineStyle',':', 'linewidth',3);
+    YTicks = cat(2, YTicks, yPRE*10);
+    YTickLabels = cat(2, YTickLabels,  {[num2str(round(yPRE)*10) ' '] });
+    [YTicks, b] = sort(YTicks);
+    YTickLabels = YTickLabels(b);
+    set(gca, 'YTick', YTicks, 'YTickLabel', YTickLabels);
+end
 
 box off;
 
