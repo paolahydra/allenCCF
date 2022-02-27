@@ -1,3 +1,12 @@
+This repository is forked from https://github.com/cortex-lab/allenCCF and specializes in the efficient registration of histology slices for anatomical reconstructions and registration.
+
+Any deviation from the master repository was developed and curated by Paola Patella, PhD, FMI and University of Basel.
+Contact the author (@paolahydra) for further information.
+
+Below, information from the original repository:
+
+
+
 # allen CCF tools
 
 Some code to work with the Allen Inst Mouse Brain CCF data, specifically the 10µm voxel 2017 version. See the Wiki for detailed instructions.
