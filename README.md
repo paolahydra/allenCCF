@@ -1,4 +1,4 @@
-This repository is forked from https://github.com/cortex-lab/allenCCF and specializes in the efficient registration of histology slices for dense anatomical reconstructions and registration.
+This repository is forked from https://github.com/cortex-lab/allenCCF and specializes in the efficient registration of histology slices for dense (e.g. full-brain) anatomical registration.
 
 Please follow the instructions in the main script paolas_pipeline/generalPipeline.m
 
