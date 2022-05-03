@@ -21,9 +21,9 @@
 
 %%  set once, then always run: specify paths and settings for the specific brain to register
 % move your images to a local disk (SSD possibly) for much faster processing!
-input_folder = '/Users/galileo/dati/registered_brains_completed/Chiara';   %change this
-image_tag = 'MAX_Rabies_Cerv_uni_1_';                                               %change this - use an unequivocal tag for your experiment
-microns_per_pixel = 1.2980; %take this value from your tile metadata
+input_folder = '/Users/galileo/dati/registered_brains_completed/';   %change this
+image_tag = 'SC_';                                               %change this - use an unequivocal tag for your experiment
+microns_per_pixel = 16; %take this value from your tile metadata
 
 % increase gain if for some reason the images are not bright enough
 gain = 1;   % for visualization only: during cropping or atlas alignment
@@ -106,7 +106,7 @@ scriptname = fullfile(genPipScriptLibrary, sprintf('generalPipeline_%s_%s.m',rep
 if strcmp(A.Filename, scriptname)
     fprintf('Script %s already existing and in use.\n',sprintf('generalPipeline_%s_%s.m',repositoryTag, image_tag(1:end-1)))
 else
-    if exists(scriptname, 'file') %do not overwrite
+    if exist(scriptname, 'file') %do not overwrite
         scriptname = fullfile(genPipScriptLibrary, sprintf('generalPipeline_%s_%s_s.m',repositoryTag, image_tag(1:end-1)), string(datetime('now', 'Format','yyyyMMdd_hhmmss')));
     end
     copyfile(A.Filename, scriptname)
@@ -114,6 +114,8 @@ else
     clear A
     matlab.desktop.editor.openAndGoToLine(scriptname, getcurrentline+4);
 end
+
+%%
 
 
 %% do once, then skip: move your MAX_ full resolution images in the startingSingleSlices folder 
