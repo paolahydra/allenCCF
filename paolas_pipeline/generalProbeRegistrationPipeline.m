@@ -39,18 +39,17 @@
 %   restart the program and you have already done that step, you can skip it.
 
 
-%%
-makeVideo = 0;
 
 %%  set once, then always run: specify paths and settings for the specific brain to register
 % move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\patepaol\intan_recs\anatomy_probeMapping\1048878';   %where your images are
+input_folder = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\patepaol\intan_recs\anatomy_probeMapping\1048878';   %where your images are
 image_tag = 'mouse_1048878';    % fixed root of your image filenames: use an unequivocal tag for your experiment
+image_files_are_individual_slices = 1;     % Do your images contain MULTIPLE brain slices?
+microns_per_pixel = 5.1803; %best guess (no need for submicron precision. If you are way off, you will crop too much or too little)
+
 probe_lengths =         4.650;  % how far into the brain did you go from the surface, either for each probe or just one number for all -- in mm
 active_probe_length =   0.200;  % from the bottom tip, how much of the probe contained recording sites -- in mm
 nSessions_down =        4;      % number of sessions you turned down by an active length
-
-microns_per_pixel = 5.1803; %best guess (no need for submicron precision. If you are way off, you will crop too much or too little)
 
 % increase gain if for some reason the images are not bright enough
 gain = 3;   % for visualization only: during cropping or atlas alignment
@@ -86,9 +85,10 @@ clear fn
 %%  always run: (set once to make it more easily portable across all the computers you use)
 
 % single machine setting (change with your paths):
-addpath(genpath('/Users/galileo/GitHub/allenCCF'))
-addpath(genpath('/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/npy-matlab-master/npy-matlab'))
-pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+rootFolderScripts = '/Users/galileo/GitHub/'; %path to this repo
+pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files'; % path to atlas data
+addpath(genpath('/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/npy-matlab-master/npy-matlab')) %path to npy-matlab
+addpath(genpath(fullfile(rootFolderScripts, 'allenCCF')))
 
 % % if you use the code across different machines (with different filesystem
 % % and/or paths), you may find convenient to specify all of them at once
@@ -133,11 +133,14 @@ end
 
 
 
-cd(image_folder)
-save_folder = fullfile(image_folder, 'startingSingleSlices');
-folder_processed_images = fullfile(save_folder, 'processed');
+cd(input_folder)
+image_folder = fullfile(input_folder, 'startingSingleSlices');
+if ~exist(image_folder, 'dir')
+    mkdir(image_folder);
+end
+save_folder = fullfile(image_folder, 'processed');
 if ~exist(save_folder, 'dir')
-    mkdir(save_folder)
+    mkdir(save_folder);
 end
 
 
@@ -160,47 +163,54 @@ else
 end
 
 
-%% 1. do once, then skip: PP's preprocessing of axioscan images in ImageJ
-% 1. This step only applies if you start with Zeiss .czi format (axioscan).
-% If your images are already .tiff, you can skip this (or may need
-% different preprocessing). 
+%% 1. do once, then skip: assess, preprocess and locate your starting images
+if ~image_files_are_individual_slices
 
-% goal is to batch convert all the axioscans .czi files to tiff.
-% Download macros from:
-% https://github.com/paolahydra/imageJ_batchProcessing/tree/main/czi_ZeissAxioscans/aaa_bestToUse
-
-
-% Instructions.
-% Drag the following macro into FIJI, then Run it (select a parent folder, 
-% and it will batch-convert all .czi files in all subfolders): 
-% batch_convert2tiff_highestResSeries_general.ijm
-
-% Depending on how your images were acquired, you may want to choose the
-% highest resolution series, or the second-highest one (there is a script
-% for this too).  
-% For cell detection, I have had good results starting from an image with
-% 3.6 um per pixel. 
-% NOTE: avoid saturating the right tail of the histogram if you want to
-% detect objects.
-
-
-%% 2. do once, then skip: split axioscans in single figures (one per slice)
-% PRO TIP: if it is the first time you run this, set wait2confirmROI = 1:
-% you will get a much better sense of what you are doing. 
-% Then set it to 0 and you will run this step way faster!
-
-wait2confirmROI = 0;    % if true, you will need to double-click to confirm each ROI. If false, a cropped image is automatically saved.
-                        % wait2confirmROI = 0; is much faster -- IF you don't make mistakes!
-axioscanTiff_slideCropper(image_folder, image_tag, save_folder, microns_per_pixel, wait2confirmROI);
-
+    %% 1.0 (optional) - PP's preprocessing of ZEISS axioscan images in ImageJ
+    
+    % This step only applies if you start with Zeiss .czi format (axioscan).
+    % If your images are already .tiff, you can skip this (or may need
+    % different preprocessing).
+    
+    % goal is to batch convert all the axioscans .czi files to tiff.
+    % Download macros from:
+    % https://github.com/paolahydra/imageJ_batchProcessing/tree/main/czi_ZeissAxioscans/aaa_bestToUse
+    
+    
+    % Instructions.
+    % Drag the following macro into FIJI, then Run it (select a parent folder,
+    % and it will batch-convert all .czi files in all subfolders):
+    % batch_convert2tiff_highestResSeries_general.ijm
+    
+    % Depending on how your images were acquired, you may want to choose the
+    % highest resolution series, or the second-highest one (there is a script
+    % for this too).
+    % For cell detection, I have had good results starting from an image with
+    % 3.6 um per pixel.
+    % NOTE: avoid saturating the right tail of the histogram if you want to
+    % detect objects.
+    
+    
+    %% 1.1  do once, then skip: split multislice images in input_folder into single-slice images
+    % PRO TIP: if it is the first time you run this, set wait2confirmROI = 1:
+    % you will get a much better sense of what you are doing.
+    % Then set it to 0 and you will run this step way faster!
+    
+    wait2confirmROI = 0;    % if true, you will need to double-click to confirm each ROI. If false, a cropped image is automatically saved.
+    % wait2confirmROI = 0; is much faster -- IF you don't make mistakes!
+    axioscanTiff_slideCropper(input_folder, image_tag(1:end-1), image_folder, microns_per_pixel, wait2confirmROI);
+    
+else
+    
+    image_file_names = dir([input_folder filesep image_tag(1:end-1) '*.tif']); % get the contents of the image_folder
+    image_file_names = natsortfiles({image_file_names.name});
+    assert(~isempty(image_file_names), 'check that images are located in the input_folder or your image name definition')
+    for f = 1:length(image_file_names)
+        movefile(image_file_names{f}, image_folder)
+    end
+end
  
-%% always run: filesystem and parameter definition - don't need to change
-% directory of single histology images
-image_folder = save_folder;
-
-% if the images are individual slices (as opposed to images of multiple
-% slices, which must be cropped using the cell CROP AND SAVE SLICES)
-image_files_are_individual_slices = true;
+%% 2. always run: filesystem and parameter definition - don't need to change
 
 % use images that are already at reference atlas resolution (here, 10um/pixel)
 use_already_downsampled_image = false; 
@@ -236,18 +246,13 @@ Process_Histology_1_PP;
 % IMPORTANT:
 % no furter manipulation should be done to the images after this stage.
 
-%% you will need to do cell detection on the *preprocessed* images.
-% step 1:
-% run  batch_split_invertColor_savePNG.ijm script in the 'preprocessed'
-% folder
-
-% step 2:
-% run cellprofiler pipeline
 
 %% 4. do once, then skip: downsample images for atlas registration (to the folder 'processed') - automatic and fast...
 % % consider closing the previous figure when you are done preprocessing:
-% close all
-folder_preprocessed_images = fullfile(save_folder, 'preprocessed');     
+% close all  
+
+% gain = 1;  %  reset the gain if you found a better value in the previous step
+
 Process_Histology_2_downsample_PP; %this will automatically downsample your *preprocessed* images and save them in the 'processed' folder for registration.
 disp('Downsampled and boosted images were saved in the processed folder')
 % This also increases the gain for better visualization during
@@ -279,7 +284,7 @@ Navigate_Atlas_and_Register_Slices_PP;
 % Then, you can more precisely register your specific slices of interest
 % following the suggested values in the T table.
 
-T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
+T = saveTransformTable(fullfile(save_folder, 'transformations'), image_file_names, reference_size);
 
 
 
@@ -316,7 +321,7 @@ T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), ima
 %% ENTER PARAMETERS AND FILE LOCATION
 
 % % file location of probe points
-% folder_processed_images = 'C:\Drive\Histology\brainX\processed';
+% save_folder = 'C:\Drive\Histology\brainX\processed';
 % 
 % % directory of reference atlas files
 % annotation_volume_location = 'C:\Drive\Histology\for tutorial\annotation_volume_10um_by_index.npy';
@@ -388,7 +393,7 @@ elseif strcmp(plane,'transverse')
 end
 
 % load probe points
-probePoints = load(fullfile(folder_processed_images, ['probe_points' probe_save_name_suffix]));
+probePoints = load(fullfile(save_folder, ['probe_points' probe_save_name_suffix]));
 ProbeColors = .75*[1.3 1.3 1.3; 1 .75 0;  .3 1 1; .4 .6 .2; 1 .35 .65; .7 .7 .9; .65 .4 .25; .7 .95 .3; .7 0 0; .6 0 .7; 1 .6 0]; 
 % order of colors: {'white','gold','turquoise','fern','bubble gum','overcast sky','rawhide', 'green apple','purple','orange','red'};
 fwireframe = []; %-PP uncomment
@@ -537,8 +542,8 @@ error_length = round(probe_radius / 10);
 % find and regions the probe goes through, confidence in those regions, and plot them
 probeRecap(selected_probe).borders_table = plotDistToNearestToTip(m, p, av_plot, st, probe_length_histo, error_length, active_site_start, distance_past_tip_to_plot, show_parent_category, show_region_table, plane, nSessions_down); % plots confidence score based on distance to nearest region along probe
 title(['Probe ' num2str(selected_probe)],'color',ProbeColors(selected_probe,:))
-savefig(fullfile(folder_processed_images, sprintf('bordersTable_probe%d.fig',selected_probe)))
-export_fig(fullfile(folder_processed_images, sprintf('bordersTable_%s_probe%d.png',image_tag, selected_probe)), '-m5');
+savefig(fullfile(save_folder, sprintf('bordersTable_probe%d.fig',selected_probe)))
+export_fig(fullfile(save_folder, sprintf('bordersTable_%s_probe%d.png',image_tag, selected_probe)), '-m5');
 
 % add some more digested info to proberecap and save it
 probeRecap(selected_probe).shrinkage_factor = shrinkage_factor;
@@ -558,7 +563,7 @@ probeRecap(selected_probe).DVstart = round(10*active_site_start - actL*(0:nSessi
 probeRecap(selected_probe).DVtip =   round(10*probe_length_histo - actL*(0:nSessions_down-1));
 
 Probe = probeRecap(selected_probe);
-save(fullfile(folder_processed_images, sprintf('Probe%d.mat',selected_probe)), '-struct', 'Probe');
+save(fullfile(save_folder, sprintf('Probe%d.mat',selected_probe)), '-struct', 'Probe');
 
 end
 
@@ -574,7 +579,9 @@ end
 %     'Color', ProbeColors(selected_probe,:), 'LineWidth', 1);
 
 
-%%
+%% the pipeline ends here
+
+%% code below is a demo for plotting probe track together with other objects
 
 
 
@@ -620,6 +627,7 @@ for i = 1:length(S)
 end
 %%
 
+makeVideo = 0;
 if makeVideo   
     F = -29.2;
     view([F, 17])

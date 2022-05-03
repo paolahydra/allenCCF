@@ -15,7 +15,7 @@
 % close all figures
 % make SliceFlipper such that it reads and saves original (not _processed) images
 close all
-folder_preprocessed_images = fullfile(save_folder, 'preprocessed');
+folder_preprocessed_images = fullfile(image_folder, 'preprocessed');
 if ~exist(folder_preprocessed_images)
     mkdir(folder_preprocessed_images)
     for f = 1: length(image_file_names)

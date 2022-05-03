@@ -5,7 +5,7 @@
 
 % finds or creates a folder location for processed images -- 
 % a folder within save_folder called processed
-folder_processed_images = fullfile(save_folder, 'processed'); %this just means 'downsampled', but I kept the old naming for consistency
+folder_processed_images = save_folder; 
 if ~exist(folder_processed_images)
     mkdir(folder_processed_images)
 end

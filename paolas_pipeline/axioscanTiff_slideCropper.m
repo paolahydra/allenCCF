@@ -7,7 +7,7 @@ end
 
 %% name of images, in order anterior to posterior or vice versa
 % once these are downsampled they will be named ['original name' '_processed.tif']
-image_file_names = dir([image_folder filesep image_tag '*.tif']); % get the contents of the image_folder
+image_file_names = dir([image_folder filesep image_tag '*.tif*']); % get the contents of the image_folder
 image_file_names = natsortfiles({image_file_names.name});
 % image_file_names = {'slide no 2_RGB.tif','slide no 3_RGB.tif','slide no 4_RGB.tif'}; % alternatively, list each image in order
 

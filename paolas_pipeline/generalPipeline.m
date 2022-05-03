@@ -40,16 +40,15 @@
 
 
 
-
-
 %%  set once, then always run: specify paths and settings for the specific brain to register
 % move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = '/Users/galileo/dati/registered_brains_completed/ephys_probeLoc/1031707';   %where your images are
-image_tag = 'mouse_1031707';      %fixed root of your image filenames: use an unequivocal tag for your experiment
+input_folder = '/Users/galileo/dati/registered_brains_completed/mouse_1031707';   %where your images are
+image_tag = 'mouse_1031707_';      %fixed root of your image filenames: use an unequivocal tag for your experiment
+image_files_are_individual_slices = 1;     % Do your images contain MULTIPLE brain slices?
 microns_per_pixel = 5.1803;        %best guess (no need for submicron precision. If you are way off, you will crop too much or too little)
 
 % increase gain if for some reason the images are not bright enough
-gain = 3;   % for visualization only: during cropping or atlas alignment
+gain = 1;   % for visualization only: during cropping or atlas alignment
 
 
 
@@ -86,9 +85,10 @@ clear fn
 %%  always run: (set once to make it more easily portable across all the computers you use)
 
 % single machine setting (change with your paths):
-addpath(genpath('/Users/galileo/GitHub/allenCCF'))
-addpath(genpath('/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/npy-matlab-master/npy-matlab'))
-pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+rootFolderScripts = '/Users/galileo/GitHub/'; %path to this repo
+pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files'; % path to atlas data
+addpath(genpath('/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/npy-matlab-master/npy-matlab')) %path to npy-matlab
+addpath(genpath(fullfile(rootFolderScripts, 'allenCCF')))
 
 % % if you use the code across different machines (with different filesystem
 % % and/or paths), you may find convenient to specify all of them at once
@@ -121,7 +121,7 @@ annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_in
 structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
 template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
 
-A = matlab.desktop.editor.getActive;                                                
+                                             
 if ~isempty(generalPipelinesFolder)                       
     genPipScriptLibrary = fullfile(rootFolderScripts, generalPipelinesFolder);
     if ~exist(genPipScriptLibrary, 'dir')
@@ -133,13 +133,19 @@ end
 
 
 
-cd(image_folder)
-save_folder = fullfile(image_folder, 'startingSingleSlices');
-folder_processed_images = fullfile(save_folder, 'processed');
-if ~exist(save_folder, 'dir')
-    mkdir(save_folder)
+cd(input_folder)
+image_folder = fullfile(input_folder, 'startingSingleSlices');
+if ~exist(image_folder, 'dir')
+    mkdir(image_folder);
 end
-
+folder_preprocessed_images = fullfile(image_folder, 'preprocessed');  
+if ~exist(folder_preprocessed_images, 'dir')
+    mkdir(folder_preprocessed_images);
+end
+save_folder = fullfile(image_folder, 'processed');
+if ~exist(save_folder, 'dir')
+    mkdir(save_folder);
+end
 
 % save and start using the experiment-specific script
 A.save; %save the current script
@@ -160,47 +166,54 @@ else
 end
 
 
-%% 1. do once, then skip: PP's preprocessing of axioscan images in ImageJ
-% 1. This step only applies if you start with Zeiss .czi format (axioscan).
-% If your images are already .tiff, you can skip this (or may need
-% different preprocessing). 
+%% 1. do once, then skip: assess, preprocess and locate your starting images
+if ~image_files_are_individual_slices
 
-% goal is to batch convert all the axioscans .czi files to tiff.
-% Download macros from:
-% https://github.com/paolahydra/imageJ_batchProcessing/tree/main/czi_ZeissAxioscans/aaa_bestToUse
+    %% 1.0 (optional) - PP's preprocessing of ZEISS axioscan images in ImageJ
+    
+    % This step only applies if you start with Zeiss .czi format (axioscan).
+    % If your images are already .tiff, you can skip this (or may need
+    % different preprocessing).
+    
+    % goal is to batch convert all the axioscans .czi files to tiff.
+    % Download macros from:
+    % https://github.com/paolahydra/imageJ_batchProcessing/tree/main/czi_ZeissAxioscans/aaa_bestToUse
+    
+    
+    % Instructions.
+    % Drag the following macro into FIJI, then Run it (select a parent folder,
+    % and it will batch-convert all .czi files in all subfolders):
+    % batch_convert2tiff_highestResSeries_general.ijm
+    
+    % Depending on how your images were acquired, you may want to choose the
+    % highest resolution series, or the second-highest one (there is a script
+    % for this too).
+    % For cell detection, I have had good results starting from an image with
+    % 3.6 um per pixel.
+    % NOTE: avoid saturating the right tail of the histogram if you want to
+    % detect objects.
+    
+    
+    %% 1.1  do once, then skip: split multislice images in input_folder into single-slice images
+    % PRO TIP: if it is the first time you run this, set wait2confirmROI = 1:
+    % you will get a much better sense of what you are doing.
+    % Then set it to 0 and you will run this step way faster!
+    
+    wait2confirmROI = 0;    % if true, you will need to double-click to confirm each ROI. If false, a cropped image is automatically saved.
+    % wait2confirmROI = 0; is much faster -- IF you don't make mistakes!
+    axioscanTiff_slideCropper(input_folder, image_tag(1:end-1), image_folder, microns_per_pixel, wait2confirmROI);
+    
+else
+    
+    image_file_names = dir([input_folder filesep image_tag(1:end-1) '*.tif']); % get the contents of the image_folder
+    image_file_names = natsortfiles({image_file_names.name});
+    assert(~isempty(image_file_names), 'check that images are located in the input_folder or your image name definition')
+    for f = 1:length(image_file_names)
+        movefile(image_file_names{f}, image_folder)
+    end
+end
 
-
-% Instructions.
-% Drag the following macro into FIJI, then Run it (select a parent folder, 
-% and it will batch-convert all .czi files in all subfolders): 
-% batch_convert2tiff_highestResSeries_general.ijm
-
-% Depending on how your images were acquired, you may want to choose the
-% highest resolution series, or the second-highest one (there is a script
-% for this too).  
-% For cell detection, I have had good results starting from an image with
-% 3.6 um per pixel. 
-% NOTE: avoid saturating the right tail of the histogram if you want to
-% detect objects.
-
-
-%% 2. do once, then skip: split axioscans in single figures (one per slice)
-% PRO TIP: if it is the first time you run this, set wait2confirmROI = 1:
-% you will get a much better sense of what you are doing. 
-% Then set it to 0 and you will run this step way faster!
-
-wait2confirmROI = 0;    % if true, you will need to double-click to confirm each ROI. If false, a cropped image is automatically saved.
-                        % wait2confirmROI = 0; is much faster -- IF you don't make mistakes!
-axioscanTiff_slideCropper(image_folder, image_tag, save_folder, microns_per_pixel, wait2confirmROI);
-
- 
-%% always run: filesystem and parameter definition - don't need to change
-% directory of single histology images
-image_folder = save_folder;
-
-% if the images are individual slices (as opposed to images of multiple
-% slices, which must be cropped using the cell CROP AND SAVE SLICES)
-image_files_are_individual_slices = true;
+%% 2. always run: filesystem and parameter definition - don't need to change
 
 % use images that are already at reference atlas resolution (here, 10um/pixel)
 use_already_downsampled_image = false; 
@@ -237,17 +250,21 @@ Process_Histology_1_PP;
 % no furter manipulation should be done to the images after this stage.
 
 %% you will need to do cell detection on the *preprocessed* images.
+% e.g.:
 % step 1:
 % run  batch_split_invertColor_savePNG.ijm script in the 'preprocessed'
 % folder
 
 % step 2:
-% run cellprofiler pipeline
+% run cellprofiler pipeline or trackmate or other detection software. Get
+% csv with coordinates
 
 %% 4. do once, then skip: downsample images for atlas registration (to the folder 'processed') - automatic and fast...
 % % consider closing the previous figure when you are done preprocessing:
 % close all
-folder_preprocessed_images = fullfile(save_folder, 'preprocessed');     
+
+% gain = 1;  % reset the gain if you found a better value in the previous step
+
 Process_Histology_2_downsample_PP; %this will automatically downsample your *preprocessed* images and save them in the 'processed' folder for registration.
 disp('Downsampled and boosted images were saved in the processed folder')
 % This also increases the gain for better visualization during
@@ -279,7 +296,7 @@ Navigate_Atlas_and_Register_Slices_PP;
 % Then, you can more precisely register your specific slices of interest
 % following the suggested values in the T table.
 
-T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
+T = saveTransformTable(fullfile(save_folder, 'transformations'), image_file_names, reference_size);
 
 
 
