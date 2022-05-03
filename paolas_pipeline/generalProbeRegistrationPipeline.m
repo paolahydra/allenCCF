@@ -1,12 +1,13 @@
+
+% https://github.com/paolahydra/allenCCF/tree/sliceRegistration
+
 % This software is based on:
 % https://github.com/cortex-lab/allenCCF/
 
-% Arber lab mainteined repository (forked from cortex-lab):
-% https://github.com/paolahydra/allenCCF/tree/sliceRegistration
 %
 % % The following are needed for full functionality:
 % Images of mouse brain slices (individually cropped or with multiple slices per image; coronal, sagittal, or transverse)
-% Know the resolution (in microns per pixel) of these images
+% Know the approximate resolution (in microns per pixel) of these images
 % A computer mouse with a scroll wheel
 % MATLAB (R2017 or above used for testing)
 % This repository. Add all folders and subfolders to your MATLAB path. All user-oriented scripts are in the 'SHARP-Track' folder.
@@ -16,22 +17,44 @@
 
 
 
+%% HOW TO RUN THIS PIPELINE
 % * remember to run one section at a time, instead of the whole script at once *
+
+% follow the instructions in the section's header:
+
+%   - "set once", means that the section contains experiment specific
+%   settings that you need to set once when you start. Once set, you don't
+%   need to change those anymore (they will be saved with your
+%   expt-specific script).
+
+%   - "always run", means that you need to evaluate the section every time
+%   you re-start the program. More clearly, after closing matlab, or simply 
+%   clearing the workspace, you can pick up from where you had left, since  
+%   the intermediate output is always saved. However, when you restart you 
+%   need to run all the "always-run" sections to reload the needed
+%   variables). 
+
+%   - "do once, then skip": this is a section that only saves intermediate
+%   output to the disk, so you only need to evaluate once. If you later
+%   restart the program and you have already done that step, you can skip it.
+
+
+%%
 makeVideo = 0;
 
 %%  set once, then always run: specify paths and settings for the specific brain to register
 % move your images to a local disk (SSD possibly) for much faster processing!
-image_folder = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\patepaol\intan_recs\anatomy_probeMapping\1048878';   %change this
-image_tag = 'mouse_1048878';                                                 %change this - use an unequivocal tag for your experiment
+image_folder = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\patepaol\intan_recs\anatomy_probeMapping\1048878';   %where your images are
+image_tag = 'mouse_1048878';    % fixed root of your image filenames: use an unequivocal tag for your experiment
 probe_lengths =         4.650;  % how far into the brain did you go from the surface, either for each probe or just one number for all -- in mm
 active_probe_length =   0.200;  % from the bottom tip, how much of the probe contained recording sites -- in mm
 nSessions_down =        4;      % number of sessions you turned down by an active length
 
-
-microns_per_pixel = 5.1803; %3.4536; %3.8852; %take this value from your tiff filename
+microns_per_pixel = 5.1803; %best guess (no need for submicron precision. If you are way off, you will crop too much or too little)
 
 % increase gain if for some reason the images are not bright enough
 gain = 3;   % for visualization only: during cropping or atlas alignment
+
 
 
 % stable settings (no need to change):
@@ -45,27 +68,51 @@ generalPipelinesFolder = 'generalPipelineUsedScripts'; %leave empty if you want 
 plane = 'coronal';  % plane to view ('coronal', 'sagittal', 'transverse')
 % transformation to use for registration:
 transformationType = 'pwl';     %use 'projective', or 'pwl' (piece-wise linear: more advanced).                       
-  
 
-%%  always run: (set once to make it more easily portable across the computers you use)
-[~,localhost] = system('hostname');
-% archstr = computer('arch');     % it could be of use too
-
-if strcmp(localhost(1:end-1), 'Paolas-MacBook-Pro.local')
-    rootFolderScripts = '/Users/galileo/GitHub/';
-    addpath(genpath('/Users/galileo/GitHub/matlabUtilities/npy-matlab-master/npy-matlab'))
-    pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
-elseif strcmp(localhost(1:end-1), 'f452d-96617e') % put yours here
-    rootFolderScripts = 'C:\GitHub\';    % % -------------------   put yours here
-    addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')) %includes npy
-    pathToAtlas = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\';
-else 
-    rootFolderScripts = 'C:\Users\patepaol\Documents\GitHub';  % % -------------------   put yours here
-    addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')) %includes npy
-    pathToAtlas = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\';
+if ~strcmp( image_tag(end), '_')
+    image_tag = cat(2, image_tag, '_');
 end
-clear localhost
-addpath(genpath(fullfile(rootFolderScripts, 'allenCCF')))
+
+A = matlab.desktop.editor.getActive; 
+[~, fn] = fileparts(A.Filename);
+if ~strcmp(fn, 'generalProbeRegistrationPipeline')
+    if ~contains(fn, image_tag(1:end-1))
+        warning('this script will be saved with the new settings when you evaluate the next session.')
+    end
+end
+clear fn
+
+
+%%  always run: (set once to make it more easily portable across all the computers you use)
+
+% single machine setting (change with your paths):
+addpath(genpath('/Users/galileo/GitHub/allenCCF'))
+addpath(genpath('/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/npy-matlab-master/npy-matlab'))
+pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+
+% % if you use the code across different machines (with different filesystem
+% % and/or paths), you may find convenient to specify all of them at once
+% % here:
+% [~,localhost] = system('hostname');
+% % archstr = computer('arch');     % it could be of use too
+% 
+% if strcmp(localhost(1:end-1), 'Paolas-MacBook-Pro.local')
+%     rootFolderScripts = '/Users/galileo/GitHub/';
+%     addpath(genpath('/Users/galileo/GitHub/matlabUtilities/npy-matlab-master/npy-matlab'))
+%     pathToAtlas = '/Users/galileo/Documents/MATLAB/codeArberLab/anatomyRegistration/cortexLabCode/allen brain template files';
+% elseif strcmp(localhost(1:end-1), 'f452d-96617e') % put yours here
+%     rootFolderScripts = 'C:\GitHub\';    % % -------------------   put yours here
+%     addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')) %includes npy
+%     pathToAtlas = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\';
+% else 
+%     rootFolderScripts = 'C:\Users\patepaol\Documents\GitHub';  % % -------------------   put yours here
+%     addpath(genpath('\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas')) %includes npy
+%     pathToAtlas = '\\tungsten-nas.fmi.ch\tungsten\scratch\garber\BrainRegistration\code and atlas\allen brain template files\';
+% end
+% clear localhost
+% addpath(genpath(fullfile(rootFolderScripts, 'allenCCF')))
+
+
 
 
 % no need to change below:
@@ -74,7 +121,7 @@ annotation_volume_location = fullfile(pathToAtlas, 'annotation_volume_10um_by_in
 structure_tree_location = fullfile(pathToAtlas, 'structure_tree_safe_2017.csv');
 template_volume_location = fullfile(pathToAtlas, 'template_volume_10um.npy');
 
-A = matlab.desktop.editor.getActive;                                                
+                                               
 if ~isempty(generalPipelinesFolder)                       
     genPipScriptLibrary = fullfile(rootFolderScripts, generalPipelinesFolder);
     if ~exist(genPipScriptLibrary, 'dir')
@@ -85,17 +132,17 @@ else
 end
 
 
-if ~strcmp( image_tag(end), '_')
-    image_tag = cat(2, image_tag, '_');
-end
 
 cd(image_folder)
 save_folder = fullfile(image_folder, 'startingSingleSlices');
 folder_processed_images = fullfile(save_folder, 'processed');
+if ~exist(save_folder, 'dir')
+    mkdir(save_folder)
+end
 
 
-%
-A.save;
+% save and start using the experiment-specific script
+A.save; %save the current script
 scriptname = fullfile(genPipScriptLibrary, sprintf('generalPipeline_%s_%s.m',repositoryTag, image_tag(1:end-1)));
 
 if strcmp(A.Filename, scriptname)
@@ -114,17 +161,34 @@ end
 
 
 %% 1. do once, then skip: PP's preprocessing of axioscan images in ImageJ
-% 1. batch convert all the axioscans ito tiff in ImageJ, using the macro: 
-% batch_convert2tiff_highestResSeries_general.ijm.  Depending on how
-% your images were acquired, you may want to choose the highest resolution
-% series, or the second-highest one (there is a script for this too). 
-% For cell detection, I have had good results for cell detection starting 
-% from an image with 3.6 um per pixel.
-% -- avoid saturating the right tail of the histogram if you want to
-% detect stuff.
+% 1. This step only applies if you start with Zeiss .czi format (axioscan).
+% If your images are already .tiff, you can skip this (or may need
+% different preprocessing). 
+
+% goal is to batch convert all the axioscans .czi files to tiff.
+% Download macros from:
+% https://github.com/paolahydra/imageJ_batchProcessing/tree/main/czi_ZeissAxioscans/aaa_bestToUse
+
+
+% Instructions.
+% Drag the following macro into FIJI, then Run it (select a parent folder, 
+% and it will batch-convert all .czi files in all subfolders): 
+% batch_convert2tiff_highestResSeries_general.ijm
+
+% Depending on how your images were acquired, you may want to choose the
+% highest resolution series, or the second-highest one (there is a script
+% for this too).  
+% For cell detection, I have had good results starting from an image with
+% 3.6 um per pixel. 
+% NOTE: avoid saturating the right tail of the histogram if you want to
+% detect objects.
 
 
 %% 2. do once, then skip: split axioscans in single figures (one per slice)
+% PRO TIP: if it is the first time you run this, set wait2confirmROI = 1:
+% you will get a much better sense of what you are doing. 
+% Then set it to 0 and you will run this step way faster!
+
 wait2confirmROI = 0;    % if true, you will need to double-click to confirm each ROI. If false, a cropped image is automatically saved.
                         % wait2confirmROI = 0; is much faster -- IF you don't make mistakes!
 axioscanTiff_slideCropper(image_folder, image_tag, save_folder, microns_per_pixel, wait2confirmROI);
@@ -196,7 +260,27 @@ set(0, 'DefaultFigureWindowStyle', 'docked')
 Navigate_Atlas_and_Register_Slices_PP;
 
 %% as you are registering new slices, run this to keep your table of transformations T up to date.
+% PRO TIP: Copy and paste the follOwing line in your command window and
+% hit enter to run it.
+% This way, it will be easily accessible in the command window as a
+% recently run command, simply through the up arrow.
+% Run the line to update the content of the T variable as often as you
+% register new slices.
+% Inspect the T table to have an overview of all your offsets and
+% registration parameters.
+
+% It is useful to first coarsely register a few (2-4) slices with good
+% landmarks spanning a good extent of your volume, so to establish the best
+% offsets for your volume. 
+% NOTE however that the DV angle may change at the level of the 
+% midbrain/hindbrain transition, so it is best to establish offsets
+% separately for forebrain and hindbrain if needed.
+
+% Then, you can more precisely register your specific slices of interest
+% following the suggested values in the T table.
+
 T = saveTransformTable(fullfile(folder_processed_images, 'transformations'), image_file_names, reference_size);
+
 
 
 %%
