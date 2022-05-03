@@ -1,6 +1,11 @@
 This repository is forked from https://github.com/cortex-lab/allenCCF and specializes in the efficient registration of histology slices for dense (e.g. full-brain) anatomical registration.
 
-Please follow the instructions in the main script paolas_pipeline/generalPipeline.m
+Please follow the instructions in the main scripts:
+paolas_pipeline/generalPipeline.m
+paolas_pipeline/generalProbeRegistrationPipeline.m
+
+
+
 
 Any deviation from the master repository was developed and curated by Paola Patella, PhD, FMI and University of Basel.
 Contact the author (@paolahydra) for further information.
@@ -10,7 +15,9 @@ Contact the author (@paolahydra) for further information.
 
 
 
-
+-
+-
+-
 Below, information from the original repository:
 
 
